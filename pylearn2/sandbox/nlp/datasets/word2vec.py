@@ -60,7 +60,7 @@ class Word2Vec(VectorSpacesDataset, TextDatasetMixin):
             (means, stds) = cPickle.load(f)
 
         print "normalizing targets"
-        y = (y - means)/stds
+        self.y = (self.y - means)/stds
 
         source = ('features', 'targets')
         space = CompositeSpace([SequenceDataSpace(IndexSpace(dim=1,

@@ -116,7 +116,7 @@ class SequenceDatasetIterator(FiniteDatasetIterator):
             if isinstance(space, SequenceDataSpace):
                 # Add padding
                 max_sequence_length = max(len(sample) for sample
-                                          in data)
+                                          in data[next_index])
                 batch = np.zeros((len(rval), max_sequence_length,
                                   space.dim), dtype=space.dtype)
                 for i, sample in enumerate(rval):

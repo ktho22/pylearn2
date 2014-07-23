@@ -62,7 +62,6 @@ class SequenceSpace(space.CompositeSpace):
         return '%s(%s)' % (self.__class__.__name__, self.space)
 
     @wraps(space.Space._format_as_impl)
->>>>>>> bartvm/word2vec_dataset
     def _format_as_impl(self, is_numeric, batch, space):
         assert isinstance(space, SequenceSpace)
         if is_numeric:
