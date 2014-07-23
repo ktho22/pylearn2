@@ -15,10 +15,11 @@
         dim: 300,
         irange: 0.01,
       },
-      !obj:pylearn2.sandbox.rnn.models.mlp.Recurrent {
+      !obj:pylearn2.sandbox.rnn.models.rnn.Recurrent {
         layer_name: 'recurrent_layer',
         dim: 500,
         irange: 0.01,
+        indices: [-1]
       },
       !obj:pylearn2.models.mlp.Linear {
         layer_name: 'linear_layer',
@@ -32,8 +33,12 @@
     batch_size: 32,
     monitoring_dataset: {
       valid: !obj:pylearn2.sandbox.nlp.datasets.word2vec.Word2Vec {
-        which_set: 'train',
+        which_set: 'valid',
       },
     },
+    cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {
+      clipping_value: 1,
+      cost: !obj:pylearn2.costs.mlp.Default {}
+    }
   },
 }
