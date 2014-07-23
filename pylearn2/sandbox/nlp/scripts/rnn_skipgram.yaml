@@ -7,7 +7,7 @@
     frame_length: &n 7,
     stop: 100000000,
     _iter_num_batches: 1000,
-    X_labels: &l 30000, 
+    X_labels: &l 15000, 
     load_to_memory: True,
     cache_size: 100000,
     cache_delta: 10000
@@ -28,8 +28,8 @@
       # },
      !obj:pylearn2.sandbox.rnn.models.mlp.Multiplicative_Gated_Recurrent {
         layer_name: 'recurrent_layer',
-        proj_dim: 256,
-        dim: 512,
+        proj_dim: 100, # 256,
+        dim: 100, #512,
         max_labels: *char_labels,
         irange: 0.01,
       },
@@ -95,14 +95,14 @@
       },
     },
   },
-  extensions: [
-       !obj:pylearn2.train_extensions.WordRelationship {
-         vocab: "/data/lisatmp3/pougetj/vocab.pkl",
-         questions: "/data/lisatmp3/pougetj/questions-words.txt",
-         vocab_size: *l,
-         UNK: 1,
-         n_batches: 4, 
-       }
-  ],
+  #extensions: [
+  #     !obj:pylearn2.train_extensions.WordRelationship {
+  #       vocab: "/data/lisatmp3/pougetj/vocab.pkl",
+  #       questions: "/data/lisatmp3/pougetj/questions-words.txt",
+  #       vocab_size: *l,
+  #       UNK: 1,
+  #       n_batches: 4, 
+  #     }
+  #],
   save_freq: 1,
 }

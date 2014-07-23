@@ -51,10 +51,7 @@ class Word2Vec(VectorSpacesDataset, TextDatasetMixin):
             # Format is now [batch, time, data]
             X = np.asarray([char_sequence[:, np.newaxis]
                             for char_sequence in node])
-        print "X[0]"
-        print X[0]
-        print X[1]
-        print X[2]
+ 
         self._sequence_lengths = [len(sequence) for sequence in X]
         #self._sequence_lengths = None
         print "Loading targets"

@@ -5,7 +5,7 @@ from scipy.spatial import cKDTree
 from scipy.spatial.distance import cosine
 import theano as t
 
-path = 'gated_char_embeddings12.pkl'
+path = '../pkls/mult_char_embeddings.pkl'
 embeddings_path = '/data/lisa/data/word2vec/embeddings.h5'
 chars_path = '/data/lisa/data/word2vec/char_vocab.pkl'
 _path = '/data/lisa/data/word2vec/characters.pkl'
@@ -28,8 +28,8 @@ with tables.open_file('/data/lisa/data/word2vec/characters.h5') as f:
 print len(valid_chars), "valid chars"
 print len (train_chars), "train chars"
 
-# all_chars = valid_chars + train_chars
-all_chars = train_chars
+all_chars = valid_chars + train_chars
+#all_chars = train_chars
 print len(all_chars), "all chars"
 
 with tables.open_file(embeddings_path) as f:
@@ -37,8 +37,8 @@ with tables.open_file(embeddings_path) as f:
     valid_embeddings = node1[:]
     node2 = f.get_node('/embeddings_train')
     train_embeddings = node2[:]
-# all_embeddings = np.concatenate((valid_embeddings, train_embeddings))
-all_embeddings = train_embeddings
+all_embeddings = np.concatenate((valid_embeddings, train_embeddings))
+#all_embeddings = train_embeddings
 print all_embeddings.shape
 with open('normalization.pkl') as f:
     (means, stds) = cPickle.load(f)
@@ -105,7 +105,7 @@ def run_string(word):
     print word, ":", close
 
 def run_index(index):
-    close = findClose(run_example(train_chars[index]))
+    close = findClose(run_example(all_chars[index]))
     print makeWord(index), ":", close
 
 if __name__ == "__main__":
