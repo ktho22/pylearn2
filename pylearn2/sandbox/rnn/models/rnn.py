@@ -648,7 +648,7 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
         b_z = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b_z')
         b_r = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b_r')
 
-        self._params = {'P': sharedX(P, name=self.layer_name + '_P'),
+        self._parameters = {'P': sharedX(P, name=self.layer_name + '_P'),
                         'W': sharedX(W, name=(self.layer_name + '_W')),
                         'U': sharedX(U, name=(self.layer_name + '_U')),
                         'b': sharedX(np.zeros((self.max_labels,self.dim)) + self.init_bias,
@@ -659,13 +659,20 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
                         'Wr': sharedX(W_r, name=(self.layer_name + '_Wr')),
                         'Ur': sharedX(U_r, name=(self.layer_name + '_Ur')),
                         'br': b_r}
+
+        # for get_layer_monitoring channels
+        self._params = [self._parameters[key] for key in ['W', 'U', 'b']]
+
+    @wraps(Layer.get_params)
+    def get_params(self):
+        return self._parameters.values()
         
     @wraps(Layer.fprop)
     def fprop(self, state_below):
         state_below, mask = state_below
         shape = state_below.shape
         state_below = state_below.reshape((shape[0]*shape[2], shape[1]))
-        proj = self._params['P'][state_below]
+        proj = self._parameters['P'][state_below]
 
 
         # h0 is the initial hidden state which is (batch size, output dim)
@@ -677,12 +684,12 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
 
         # It is faster to do the input-to-hidden matrix multiplications
         # outside of scan
-        state_in = (tensor.dot(proj, self._params['W']))
+        state_in = (tensor.dot(proj, self._parameters['W']))
 
-        state_z = (tensor.dot(proj, self._params['Wz']) 
-                         + self._params['bz'])
-        state_r = (tensor.dot(proj, self._params['Wr'])
-                         + self._params['bR'])
+        state_z = (tensor.dot(proj, self._parameters['Wz']) 
+                         + self._parameters['bz'])
+        state_r = (tensor.dot(proj, self._parameters['Wr'])
+                         + self._parameters['br'])
 
         def fprop_step(state_below, mask, state_in, state_z, state_r, 
                        state_before, U, b, Uz, Ur):
@@ -694,11 +701,10 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
             b_i = b[state_below]
 
             pre_h = self.nonlinearity(state_in 
-                                      + r * tensor.dot(state_before, U_i)
+                                      + r * tensor.batched_dot(state_before, U_i)
                                       + b_i
                                   )
             h = z * state_before + (1. - z) * pre_h
-            
             # Only update the state for non-masked data, otherwise
             # just carry on the previous state until the end
             h = mask[:, None] * h + (1 - mask[:, None]) * state_before
@@ -710,10 +716,10 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
                                      state_z, 
                                      state_r],
                           outputs_info=[h0], 
-                          non_sequences=[self._params['U'],
-                                         self._params['b'],
-                                         self._params['Uz'],
-                                         self._params['Ur']]
+                          non_sequences=[self._parameters['U'],
+                                         self._parameters['b'],
+                                         self._parameters['Uz'],
+                                         self._parameters['Ur']]
         )
 
         self._scan_updates.update(updates)

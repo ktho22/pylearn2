@@ -741,9 +741,7 @@ class FiniteDatasetIterator(object):
             dataset_sub_spaces = dataset_space.components
         assert len(dataset_source) == len(dataset_sub_spaces)
 
-        all_data = self._dataset.get_data()
-        if not isinstance(all_data, tuple):
-            all_data = (all_data,)
+        
 
         space, source = data_specs
         if not isinstance(source, tuple):
@@ -753,9 +751,14 @@ class FiniteDatasetIterator(object):
         else:
             sub_spaces = space.components
         assert len(source) == len(sub_spaces)
-
-        self._raw_data = tuple(all_data[dataset_source.index(s)]
-                               for s in source)
+        
+        if not hasattr(self._dataset, 'get'):
+        
+            all_data = self._dataset.get_data()
+            if not isinstance(all_data, tuple):
+                all_data = (all_data,)
+            self._raw_data = tuple(all_data[dataset_source.index(s)]
+                                   for s in source)
         self._source = source
         self._space = sub_spaces
 
@@ -765,9 +768,11 @@ class FiniteDatasetIterator(object):
             assert len(convert) == len(source)
             self._convert = convert
 
-        for i, (so, sp, dt) in enumerate(safe_izip(source,
-                                                   sub_spaces,
-                                                   self._raw_data)):
+        for i, (so, sp #, dt
+            ) in enumerate(safe_izip(source,
+                                     sub_spaces,
+                                     #self._raw_data
+                                 )):
             idx = dataset_source.index(so)
             dspace = dataset_sub_spaces[idx]
 
@@ -787,13 +792,6 @@ class FiniteDatasetIterator(object):
                 if fn is None:
 
                     def fn(batch, dspace=dspace, sp=sp):
-                        # The batch of a SequenceSpace is a sequence of
-                        # arrays of the same size, which we convert into a
-                        # single ndarray here; we also need to reorder the
-                        # axes from [batch, time, data] to [time, batch, data]
-                        if isinstance(dspace, SequenceSpace):
-                            batch = np.array([_ for _ in batch])
-                            batch = np.transpose(batch, (1, 0, 2))
                         try:
                               return dspace.np_format_as(batch, sp)
                         except ValueError as e:
@@ -833,12 +831,34 @@ class FiniteDatasetIterator(object):
         # TODO: handle fancy-index copies by allocating a buffer and
         # using np.take()
 
+        # If the dataset is incompatible with the new interface, fall back to
+        # the old one
+        if hasattr(self._dataset, 'get'):
+            raw_data = self._next(next_index)
+        else:
+            raw_data = self._fallback_next(next_index)
+
         rval = tuple(
-            fn(data[next_index]) if fn else data[next_index]
+            fn(raw_data) if fn else raw_data
             for data, fn in safe_izip(self._raw_data, self._convert))
         if not self._return_tuple and len(rval) == 1:
             rval, = rval
         return rval
+
+    def _next(self, next_index):
+        return tuple(
+            fn(batch) if fn else batch for batch, fn in
+            safe_izip(self._dataset.get(self._source, next_index),
+                      self._convert)
+        )
+
+    def _fallback_next(self, next_index):
+        # TODO: handle fancy-index copies by allocating a buffer and
+        # using np.take()
+        return tuple(
+            fn(data[next_index]) if fn else data[next_index]
+            for data, fn in safe_izip(self._raw_data, self._convert)
+        )
 
     @property
     @wraps(SubsetIterator.batch_size, assigned=(), updated=())

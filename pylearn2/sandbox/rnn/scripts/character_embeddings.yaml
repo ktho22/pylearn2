@@ -25,6 +25,7 @@
         layer_name: 'linear_layer',
         dim: 300,
         irange: 0.01,
+        use_cosine_loss: True
       }
     ],
   },
@@ -33,7 +34,7 @@
     batch_size: 32,
     monitoring_dataset: {
       valid: !obj:pylearn2.sandbox.nlp.datasets.word2vec.Word2Vec {
-        which_set: 'valid',
+        which_set: 'train',
       },
     },
     cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {

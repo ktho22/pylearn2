@@ -11,6 +11,7 @@
     },
     layers: [
       !obj:pylearn2.sandbox.rnn.models.rnn.MultiplicativeRUGatedRecurrent {
+      #!obj:pylearn2.sandbox.rnn.models.mlp.Multiplicative_Gated_Recurrent {
         layer_name: 'recurrent_layer',
         proj_dim : 300,
         dim: 500,
@@ -22,6 +23,7 @@
         layer_name: 'linear_layer',
         dim: 300,
         irange: 0.01,
+       # use_cosine_loss: True
       }
     ],
   },
@@ -35,6 +37,6 @@
       },
     },
   },
-  save_path: '/Tmp/devincol/mult_char_embeddings_masked.pkl',
+  save_path: '/Tmp/devincol/mult_char_embeddings_masked_profile.pkl',
   save_freq: 1,
 }

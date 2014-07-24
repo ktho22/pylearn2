@@ -109,14 +109,19 @@ class SequenceDatasetIterator(FiniteDatasetIterator):
     def next(self):
         next_index = self._subset_iterator.next()
         rvals = []
-        for space, source, data, fn in safe_izip(self._space, self._source,
-                                                 self._raw_data,
-                                                 self._convert):
-            rval = fn(data[next_index]) if fn else data[next_index]
+        if hasattr(self._dataset, 'get'):
+            raw_data = self._next(next_index)
+        else:
+            raw_data = self._fallback_next(next_index)
+        for (space, source, data, fn) in safe_izip(self._space, self._source,
+                                                   #self._raw_data,
+                                                   raw_data,
+                                                   self._convert):
+            rval = data
             if isinstance(space, SequenceDataSpace):
                 # Add padding
                 max_sequence_length = max(len(sample) for sample
-                                          in data[next_index])
+                                          in data)
                 batch = np.zeros((len(rval), max_sequence_length,
                                   space.dim), dtype=space.dtype)
                 for i, sample in enumerate(rval):

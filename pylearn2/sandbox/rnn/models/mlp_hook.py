@@ -85,7 +85,8 @@ class RNNWrapper(MetaLibVersion):
 
             @functools.wraps(old_init)
             def __init__(self, layers, batch_size=None, input_space=None,
-                         input_source='features', nvis=None, seed=None,
+                         input_source='features', target_source='targets',
+                         nvis=None, seed=None,
                          layer_name=None, **kwargs):
                 def add_mask_source(input_space, input_source):
                     """
@@ -106,7 +107,7 @@ class RNNWrapper(MetaLibVersion):
                     return input_source
                 input_source = add_mask_source(input_space, input_source)
                 return old_init(self, layers, batch_size, input_space,
-                                input_source, nvis, seed, layer_name, **kwargs)
+                                input_source, target_source, nvis, seed, layer_name, **kwargs)
             cls.__init__ = __init__
 
     @classmethod
