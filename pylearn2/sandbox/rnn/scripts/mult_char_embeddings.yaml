@@ -1,6 +1,7 @@
 !obj:pylearn2.train.Train {
   dataset: !obj:pylearn2.sandbox.nlp.datasets.word2vec.Word2Vec {
     which_set: 'train',
+    stop: 100000
   },
   model: !obj:pylearn2.models.mlp.MLP {
     input_space: !obj:pylearn2.sandbox.rnn.space.SequenceSpace {
@@ -34,9 +35,18 @@
     monitoring_dataset: {
       valid: !obj:pylearn2.sandbox.nlp.datasets.word2vec.Word2Vec {
         which_set: 'valid',
+        stop: 1000
+      },
+      train: !obj:pylearn2.sandbox.nlp.datasets.word2vec.Word2Vec {
+        which_set: 'train',
+        stop: 1000
       },
     },
+    cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {
+      clipping_value: 1,
+      cost: !obj:pylearn2.costs.mlp.Default {}
+    }
   },
-  save_path: '/Tmp/devincol/mult_char_embeddings_masked_profile.pkl',
+  save_path: '/Tmp/devincol/mult_char_embeddings_masked_test.pkl',
   save_freq: 1,
 }
