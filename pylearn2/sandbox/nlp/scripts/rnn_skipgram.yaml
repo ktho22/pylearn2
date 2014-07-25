@@ -6,11 +6,11 @@
     which_set: 'train',
     frame_length: &n 7,
     stop: 100000000,
-    _iter_num_batches: 100,
+    _iter_num_batches: 10,
     X_labels: &l 15000, 
     load_to_memory: True,
-    cache_size: 1000000,
-    cache_delta: 100000
+    cache_size: 1000,
+    cache_delta: 100
   },
   model: !obj:pylearn2.models.mlp.MLP {
     input_space: !obj:pylearn2.sandbox.rnn.space.SequenceSpace {
@@ -28,8 +28,8 @@
       # },
      !obj:pylearn2.sandbox.rnn.models.rnn.MultiplicativeRUGatedRecurrent {
         layer_name: 'recurrent_layer',
-        proj_dim: 100, # 256,
-        dim: 100, #512,
+        proj_dim:  256,
+        dim: 384,
         max_labels: *char_labels,
         irange: 0.01,
         indices: [-1]
@@ -88,21 +88,26 @@
         which_set: 'valid',
         frame_length: *n,
         stop: 5000,
-        _iter_num_batches: 100,
+        _iter_num_batches: 10,
         X_labels: *l,
         load_to_memory: True
       },
      'train': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
         path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_train.h5',
         node: '/double_filtered_binarized_corpus_train',
-        which_set: 'valid',
+        which_set: 'train',
         frame_length: *n,
-        stop: 5000,
-        _iter_num_batches: 100,
+        stop: 1000,
+        _iter_num_batches: 10,
         X_labels: *l,
         load_to_memory: True
       },
     },
+    cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {
+      clipping_value: 1,
+      cost: !obj:pylearn2.costs.mlp.Default {}
+    }
+
   },
   #extensions: [
   #     !obj:pylearn2.train_extensions.WordRelationship {
@@ -113,5 +118,6 @@
   #       n_batches: 4, 
   #     }
   #],
+  save_path: '/Tmp/devincol/rnn_skipgram_2.pkl',
   save_freq: 1,
 }
