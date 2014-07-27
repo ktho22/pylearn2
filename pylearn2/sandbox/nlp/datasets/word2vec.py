@@ -49,7 +49,7 @@ class Word2Vec(VectorSpacesDataset, TextDatasetMixin):
             # VLArray is strange, and this seems faster than reading node[:]
             if self._stop is not None:
                 self.X = np.asarray([char_sequence[:, np.newaxis]
-                                     for char_sequence in node[:1000]])
+                                     for char_sequence in node[:self._stop]])
             else:
                 self.X = np.asarray([char_sequence[:, np.newaxis]
                                      for char_sequence in node])
@@ -59,7 +59,7 @@ class Word2Vec(VectorSpacesDataset, TextDatasetMixin):
                                          'embeddings.h5')) as f:
             node = f.get_node('/embeddings_%s' % which_set)
             if self._stop is not None:
-                self.y = node[:1000]
+                self.y = node[:self._stop]
             else:
                 self.y = node[:]
 

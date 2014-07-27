@@ -109,15 +109,17 @@
     }
 
   },
-  #extensions: [
-  #     !obj:pylearn2.train_extensions.WordRelationship {
-  #       vocab: "/data/lisatmp3/pougetj/vocab.pkl",
-  #       questions: "/data/lisatmp3/pougetj/questions-words.txt",
-  #       vocab_size: *l,
-  #       UNK: 1,
-  #       n_batches: 4, 
-  #     }
-  #],
-  save_path: '/Tmp/devincol/rnn_skipgram_2.pkl',
+  extensions: [
+       !obj:pylearn2.train_extensions.WordRelationship {
+         vocab: "/data/lisatmp3/pougetj/vocab.pkl",
+         questions: "/data/lisatmp3/pougetj/questions-words.txt",
+         vocab_size: *l,
+         UNK: 1,
+         n_batches: 4, 
+         use_chars: True,
+         char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
+       }
+  ],
+  save_path: '/Tmp/devincol/rnn_skipgram_extension.pkl',
   save_freq: 1,
 }
