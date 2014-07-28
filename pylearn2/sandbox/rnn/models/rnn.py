@@ -732,3 +732,205 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
         else:
             return (h, mask)
 
+class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
+    """
+    A recurrent neural network layer using the hyperbolic tangent
+    activation function, passing on all hidden states or a selection
+    of them to the next layer.
+
+    The hidden state is initialized to zeros.
+
+    Parameters
+    ----------
+    dim : int
+        The number of elements in the hidden layer
+    layer_name : str
+        The name of the layer. All layers in an MLP must have a unique name.
+    irange : float
+        Initializes each weight randomly in U(-irange, irange)
+    irange : float
+        The input-to-hidden weight matrix is initialized with weights in
+        the uniform interval (-irange, irange). The hidden-to-hidden
+        matrix weights are sampled in the same manner, unless the argument
+        svd is set to True (see below).
+    indices : slice, list of integers or integer, optional
+        If specified this layer will return only the given hidden
+        states. If an integer is given, it will not return a
+        SequenceSpace. Otherwise, it will return a SequenceSpace of
+        fixed length. Note that a SequenceSpace of fixed length
+        can be flattened by using the FlattenerLayer.
+        Note: For now only [-1] is supported.
+    init_bias : float, optional
+        Set an initial bias to be added at each time step. Defaults to 0.
+    svd : bool, optional
+        Use singular value decomposition to factorize the hidden-to-hidden
+        transition matrix with weights in U(-irange, irange) into matrices
+        U*s*V, where U is orthogonal. This orthogonal matrix is used to
+        initialize the weight matrix. Defaults to True.
+    nonlinearity : theano function, optional
+        Defaults to tensor.tanh, the non-linearity to be applied to the
+        hidden state after each update
+    """
+    def __init__(self,
+                 proj_dim,
+                 max_labels,
+                 reset_gate_init_bias=0.,
+                 update_gate_init_bias=0.,
+                 **kwargs):
+        super(MultiplicativeRUGatedRecurrent, self).__init__(**kwargs)
+        self.rnn_friendly = True
+        self._proj_dim = proj_dim # k
+        self._max_labels = max_labels # d
+        
+        self.__dict__.update(locals())
+        del self.self
+
+    @wraps(Layer.set_input_space)
+    def set_input_space(self, space):
+        if (not isinstance(space, SequenceSpace) or
+                not isinstance(space.space, IndexSpace)):
+            raise ValueError("Multiplicative Recurrent layer needs a SequenceSpace("
+                             "IndexSpace) as input but received  %s instead"
+                             % (space))
+        self.input_space = space
+
+        if self.indices is not None:
+            if len(self.indices) > 1:
+                raise ValueError("Only indices = [-1] is supported right now")
+                self.output_space = CompositeSpace(
+                    [VectorSpace(dim=self.dim) for _
+                     in range(len(self.indices))]
+                )
+            else:
+                assert self.indices == [-1], "Only indices = [-1] works now"
+                self.output_space = VectorSpace(dim=self.dim)
+        else:
+            self.output_space = SequenceSpace(VectorSpace(dim=self.dim))
+
+        # Initialize the parameters
+        rng = self.mlp.rng
+        if self.irange is None:
+            raise ValueError("Recurrent layer requires an irange value in "
+                             "order to initialize its weight matrices")
+
+        # P is the projection matrix to convert indices to vectors
+        P = rng.uniform(-self.irange, self.irange, 
+                        (self.max_labels, self.proj_dim))
+
+        # U is the hidden-to-hidden transition tensor 
+        # (1 matrix per possible input index)
+        if self.svd:
+            U = self.mlp.rng.randn(self.max_labels, self.dim, self.dim)
+            
+            U = np.asarray([np.linalg.svd(
+                u, full_matrices=True, compute_uv=True)[0] for u in U])
+        else:
+            U = rng.uniform(-self.irange, self.irange, 
+                            (self.max_labels, self.dim, self.dim))
+
+
+        # W is the input-to-hidden matrix
+        W = rng.uniform(-self.irange, self.irange,
+                        (self.proj_dim, self.dim))
+
+        # Following the notation in
+        # "Learning Phrase Representations using RNN Encoder-Decoder
+        # for Statistical Machine Translation", W weighs the input
+        # and U weighs the recurrent value.
+        # z is the update gate, and r is the reset gate.
+        W_z = rng.uniform(-self.irange, self.irange,
+                               (self.proj_dim, self.dim))
+        W_r = rng.uniform(-self.irange, self.irange,
+                               (self.proj_dim, self.dim))
+        U_z = rng.uniform(-self.irange, self.irange,
+                               (self.dim, self.dim))
+        U_r = rng.uniform(-self.irange, self.irange,
+                               (self.dim, self.dim))
+    
+        b_z = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b_z')
+        b_r = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b_r')
+
+        self._parameters = {'P': sharedX(P, name=self.layer_name + '_P'),
+                        'W': sharedX(W, name=(self.layer_name + '_W')),
+                        'U': sharedX(U, name=(self.layer_name + '_U')),
+                        'b': sharedX(np.zeros((self.max_labels,self.dim)) + self.init_bias,
+                                     name=self.layer_name + '_b'),
+                        'Wz': sharedX(W_z, name=(self.layer_name + '_Wz')),
+                        'Uz': sharedX(U_z, name=(self.layer_name + '_Uz')),
+                        'bz': b_z,
+                        'Wr': sharedX(W_r, name=(self.layer_name + '_Wr')),
+                        'Ur': sharedX(U_r, name=(self.layer_name + '_Ur')),
+                        'br': b_r}
+
+        # for get_layer_monitoring channels
+        self._params = [self._parameters[key] for key in ['W', 'U', 'b']]
+
+    @wraps(Layer.get_params)
+    def get_params(self):
+        return self._parameters.values()
+        
+    @wraps(Layer.fprop)
+    def fprop(self, state_below):
+        state_below, mask = state_below
+        shape = state_below.shape
+        state_below = state_below.reshape((shape[0]*shape[2], shape[1]))
+        proj = self._parameters['P'][state_below]
+
+
+        # h0 is the initial hidden state which is (batch size, output dim)
+        h0 = tensor.alloc(np.cast[config.floatX](0), shape[1], self.dim)
+
+        if self.dim == 1 or h0.broadcastable[1] == True:
+            # This should fix the bug described in Theano issue #1772
+            h0 = tensor.unbroadcast(h0, 1)
+
+        # It is faster to do the input-to-hidden matrix multiplications
+        # outside of scan
+        state_in = (tensor.dot(proj, self._parameters['W']))
+
+        state_z = (tensor.dot(proj, self._parameters['Wz']) 
+                         + self._parameters['bz'])
+        state_r = (tensor.dot(proj, self._parameters['Wr'])
+                         + self._parameters['br'])
+
+        def fprop_step(state_below, mask, state_in, state_z, state_r, 
+                       state_before, U, b, Uz, Ur):
+            z = tensor.nnet.sigmoid(state_z + tensor.dot(state_before, Uz))
+            r = tensor.nnet.sigmoid(state_r + tensor.dot(state_before, Ur))
+            
+            # The subset of recurrent weight matrices to use this batch
+            U_i = U[state_below]
+            b_i = b[state_below]
+
+            pre_h = self.nonlinearity(state_in 
+                                      + r * tensor.batched_dot(state_before, U_i)
+                                      + b_i
+                                  )
+            h = z * state_before + (1. - z) * pre_h
+            # Only update the state for non-masked data, otherwise
+            # just carry on the previous state until the end
+            h = mask[:, None] * h + (1 - mask[:, None]) * state_before
+            return h
+
+        h, updates = scan(fn=fprop_step, 
+                          sequences=[state_below, 
+                                     mask, state_in, 
+                                     state_z, 
+                                     state_r],
+                          outputs_info=[h0], 
+                          non_sequences=[self._parameters['U'],
+                                         self._parameters['b'],
+                                         self._parameters['Uz'],
+                                         self._parameters['Ur']]
+        )
+
+        self._scan_updates.update(updates)
+
+        if self.indices is not None:
+            if len(self.indices) > 1:
+                return [h[i] for i in self.indices]
+            else:
+                return h[self.indices[0]]
+        else:
+            return (h, mask)
+
