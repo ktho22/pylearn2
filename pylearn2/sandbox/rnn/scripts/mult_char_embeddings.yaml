@@ -47,6 +47,6 @@
       cost: !obj:pylearn2.costs.mlp.Default {}
     }
   },
-  save_path: '/Tmp/devincol/mult_char_embeddings_masked_cosine_100000.pkl',
+  save_path: '/Tmp/devincol/mult_char_embeddings_masked_cosine_test.pkl',
   save_freq: 1,
 }
