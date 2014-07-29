@@ -777,9 +777,9 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
                  reset_gate_init_bias=0.,
                  update_gate_init_bias=0.,
                  **kwargs):
-        super(MultiplicativeRUGatedRecurrent, self).__init__(**kwargs)
+        super(FactoredMultiplicativeRUGatedRecurrent, self).__init__(**kwargs)
         self.rnn_friendly = True
-        self._proj_dim = proj_dim # k
+        self._proj_dim = proj_dim 
         self._max_labels = max_labels # d
         
         self.__dict__.update(locals())
@@ -818,20 +818,26 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
                         (self.max_labels, self.proj_dim))
 
         # U is the hidden-to-hidden transition tensor 
-        # (1 matrix per possible input index)
         if self.svd:
-            U = self.mlp.rng.randn(self.max_labels, self.dim, self.dim)
+            U = self.mlp.rng.randn(self.dim, self.proj_dim)
             
-            U = np.asarray([np.linalg.svd(
-                u, full_matrices=True, compute_uv=True)[0] for u in U])
+            #U, _ , _ = np.linalg.svd(U, full_matrices=True, compute_uv=True)
         else:
             U = rng.uniform(-self.irange, self.irange, 
-                            (self.max_labels, self.dim, self.dim))
+                            (self.dim, self.proj_dim))
 
+        # V is the hidden-to-hidden transition tensor 
+        if self.svd:
+            V = self.mlp.rng.randn(self.proj_dim, self.dim)
+            
+            #V, _, _ = np.linalg.svd(V, full_matrices=True, compute_uv=True)
+        else:
+            V = rng.uniform(-self.irange, self.irange, 
+                            (self.proj_dim, self.dim))
 
-        # W is the input-to-hidden matrix
-        W = rng.uniform(-self.irange, self.irange,
-                        (self.proj_dim, self.dim))
+        # # W is the input-to-hidden matrix
+        # W = rng.uniform(-self.irange, self.irange,
+        #                 (self._proj_dim, self.dim))
 
         # Following the notation in
         # "Learning Phrase Representations using RNN Encoder-Decoder
@@ -851,9 +857,9 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
         b_r = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b_r')
 
         self._parameters = {'P': sharedX(P, name=self.layer_name + '_P'),
-                        'W': sharedX(W, name=(self.layer_name + '_W')),
+                        'V': sharedX(V, name=(self.layer_name + '_V')),
                         'U': sharedX(U, name=(self.layer_name + '_U')),
-                        'b': sharedX(np.zeros((self.max_labels,self.dim)) + self.init_bias,
+                        'b': sharedX(np.zeros((self.dim,)) + self.init_bias,
                                      name=self.layer_name + '_b'),
                         'Wz': sharedX(W_z, name=(self.layer_name + '_Wz')),
                         'Uz': sharedX(U_z, name=(self.layer_name + '_Uz')),
@@ -863,7 +869,7 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
                         'br': b_r}
 
         # for get_layer_monitoring channels
-        self._params = [self._parameters[key] for key in ['W', 'U', 'b']]
+        self._params = [self._parameters[key] for key in ['P', 'U', 'b']]
 
     @wraps(Layer.get_params)
     def get_params(self):
@@ -886,39 +892,37 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
 
         # It is faster to do the input-to-hidden matrix multiplications
         # outside of scan
-        state_in = (tensor.dot(proj, self._parameters['W']))
+        state_in = proj # (tensor.dot(proj, self._parameters['W']))
 
         state_z = (tensor.dot(proj, self._parameters['Wz']) 
                          + self._parameters['bz'])
         state_r = (tensor.dot(proj, self._parameters['Wr'])
                          + self._parameters['br'])
 
-        def fprop_step(state_below, mask, state_in, state_z, state_r, 
-                       state_before, U, b, Uz, Ur):
-            z = tensor.nnet.sigmoid(state_z + tensor.dot(state_before, Uz))
-            r = tensor.nnet.sigmoid(state_r + tensor.dot(state_before, Ur))
+        def fprop_step(mask, state_in, state_z, state_r, 
+                       state_before, U, V, b, Uz, Ur):
+           # z = tensor.nnet.sigmoid(state_z + tensor.dot(state_before, Uz))
+           # r = tensor.nnet.sigmoid(state_r + tensor.dot(state_before, Ur))
             
             # The subset of recurrent weight matrices to use this batch
-            U_i = U[state_below]
-            b_i = b[state_below]
-
-            pre_h = self.nonlinearity(state_in 
-                                      + r * tensor.batched_dot(state_before, U_i)
-                                      + b_i
-                                  )
-            h = z * state_before + (1. - z) * pre_h
+            pre_h1 = tensor.dot(V, state_before.T)
+            pre_h1.name = "pre_h1"
+            pre_h2 = pre_h1 * state_in.T
+            pre_h2.name= "pre_h2"
+            h = self.nonlinearity(tensor.dot(pre_h2.T, U.T) +b)
+            #h = z * state_before + (1. - z) * pre_h3
             # Only update the state for non-masked data, otherwise
             # just carry on the previous state until the end
             h = mask[:, None] * h + (1 - mask[:, None]) * state_before
             return h
 
         h, updates = scan(fn=fprop_step, 
-                          sequences=[state_below, 
-                                     mask, state_in, 
+                          sequences=[mask, state_in, 
                                      state_z, 
                                      state_r],
                           outputs_info=[h0], 
                           non_sequences=[self._parameters['U'],
+                                         self._parameters['V'],
                                          self._parameters['b'],
                                          self._parameters['Uz'],
                                          self._parameters['Ur']]
