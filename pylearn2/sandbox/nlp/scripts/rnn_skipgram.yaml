@@ -6,11 +6,11 @@
     which_set: 'train',
     frame_length: &n 7,
     stop: 100000000,
-    _iter_num_batches: 50,
+    _iter_num_batches: 20,
     X_labels: &l 15000, 
     load_to_memory: True,
-    cache_size: 100000,
-    cache_delta: 10000
+    cache_size: 10000,
+    cache_delta: 1000
   },
   model: !obj:pylearn2.models.mlp.MLP {
     input_space: !obj:pylearn2.sandbox.rnn.space.SequenceSpace {
@@ -80,30 +80,30 @@
   },
   algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
     batch_size: 32, #256,
-    learning_rate: .01,
+    learning_rate: .0001,
     learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
-    #monitoring_dataset: {
-    # 'valid': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
-    #    path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_valid.h5',
-    #    node: '/double_filtered_binarized_corpus_valid',
-    #    which_set: 'valid',
-    #    frame_length: *n,
-    #    stop: 5000,
-    #    _iter_num_batches: 10,
-    #    X_labels: *l,
-    #    load_to_memory: True
-    #  },
-     #'train': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
-     #   path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_train.h5',
-     #   node: '/double_filtered_binarized_corpus_train',
-     #   which_set: 'train',
-     #   frame_length: *n,
-     #   stop: 1000,
-     #   _iter_num_batches: 10,
-     #   X_labels: *l,
-     #   load_to_memory: True
-     # },
-   # },
+    monitoring_dataset: {
+     'valid': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
+        path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_valid.h5',
+        node: '/double_filtered_binarized_corpus_valid',
+        which_set: 'valid',
+        frame_length: *n,
+        stop: 5000,
+        _iter_num_batches: 30,
+        X_labels: *l,
+        load_to_memory: True
+      },
+     'train': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
+        path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_train.h5',
+        node: '/double_filtered_binarized_corpus_train',
+        which_set: 'train',
+        frame_length: *n,
+        stop: 1000,
+        _iter_num_batches: 20,
+        X_labels: *l,
+        load_to_memory: True
+      },
+    },
     cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {
       clipping_value: 1,
       cost: !obj:pylearn2.costs.mlp.Default {}

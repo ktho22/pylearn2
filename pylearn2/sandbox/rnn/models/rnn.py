@@ -779,7 +779,6 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
                  **kwargs):
         super(FactoredMultiplicativeRUGatedRecurrent, self).__init__(**kwargs)
         self.rnn_friendly = True
-        self._proj_dim = proj_dim 
         self._max_labels = max_labels # d
         
         self.__dict__.update(locals())
@@ -816,6 +815,11 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
         # P is the projection matrix to convert indices to vectors
         P = rng.uniform(-self.irange, self.irange, 
                         (self.max_labels, self.proj_dim))
+
+        # W is the input-to-hidden matrix
+        W = rng.uniform(-self.irange, self.irange,
+                        (self.proj_dim, self.proj_dim))
+
 
         # U is the hidden-to-hidden transition tensor 
         if self.svd:
@@ -857,6 +861,7 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
         b_r = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b_r')
 
         self._parameters = {'P': sharedX(P, name=self.layer_name + '_P'),
+                        'W': sharedX(W, name=(self.layer_name + '_W')),
                         'V': sharedX(V, name=(self.layer_name + '_V')),
                         'U': sharedX(U, name=(self.layer_name + '_U')),
                         'b': sharedX(np.zeros((self.dim,)) + self.init_bias,
@@ -869,7 +874,7 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
                         'br': b_r}
 
         # for get_layer_monitoring channels
-        self._params = [self._parameters[key] for key in ['P', 'U', 'b']]
+        self._params = [self._parameters[key] for key in ['W', 'U', 'b']]
 
     @wraps(Layer.get_params)
     def get_params(self):
@@ -881,7 +886,7 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
         shape = state_below.shape
         state_below = state_below.reshape((shape[0]*shape[2], shape[1]))
         proj = self._parameters['P'][state_below]
-
+        
 
         # h0 is the initial hidden state which is (batch size, output dim)
         h0 = tensor.alloc(np.cast[config.floatX](0), shape[1], self.dim)
@@ -892,7 +897,7 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
 
         # It is faster to do the input-to-hidden matrix multiplications
         # outside of scan
-        state_in = proj # (tensor.dot(proj, self._parameters['W']))
+        state_in = (tensor.dot(proj, self._parameters['W']))
 
         state_z = (tensor.dot(proj, self._parameters['Wz']) 
                          + self._parameters['bz'])
