@@ -906,16 +906,14 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
 
         def fprop_step(mask, state_in, state_z, state_r, 
                        state_before, U, V, b, Uz, Ur):
-           # z = tensor.nnet.sigmoid(state_z + tensor.dot(state_before, Uz))
-           # r = tensor.nnet.sigmoid(state_r + tensor.dot(state_before, Ur))
+            z = tensor.nnet.sigmoid(state_z + tensor.dot(state_before, Uz))
+            r = tensor.nnet.sigmoid(state_r + tensor.dot(state_before, Ur))
             
             # The subset of recurrent weight matrices to use this batch
-            pre_h1 = tensor.dot(V, state_before.T)
-            pre_h1.name = "pre_h1"
-            pre_h2 = pre_h1 * state_in.T
-            pre_h2.name= "pre_h2"
-            h = self.nonlinearity(tensor.dot(pre_h2.T, U.T) +b)
-            #h = z * state_before + (1. - z) * pre_h3
+            pre_h1 = tensor.dot(state_before, U)
+            pre_h2 = pre_h1 * state_in
+            h = self.nonlinearity(r*tensor.dot(pre_h2, V) +b)
+            h = z * state_before + (1. - z) * h
             # Only update the state for non-masked data, otherwise
             # just carry on the previous state until the end
             h = mask[:, None] * h + (1 - mask[:, None]) * state_before

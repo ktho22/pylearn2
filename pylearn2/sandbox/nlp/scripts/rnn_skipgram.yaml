@@ -6,11 +6,11 @@
     which_set: 'train',
     frame_length: &n 7,
     stop: 100000000,
-    _iter_num_batches: 20,
+    _iter_num_batches: 100,
     X_labels: &l 15000, 
     load_to_memory: True,
-    cache_size: 10000,
-    cache_delta: 1000
+    cache_size: 100000,
+    cache_delta: 10000
   },
   model: !obj:pylearn2.models.mlp.MLP {
     input_space: !obj:pylearn2.sandbox.rnn.space.SequenceSpace {
@@ -89,7 +89,7 @@
         which_set: 'valid',
         frame_length: *n,
         stop: 5000,
-        _iter_num_batches: 30,
+        _iter_num_batches: 50,
         X_labels: *l,
         load_to_memory: True
       },
@@ -99,7 +99,7 @@
         which_set: 'train',
         frame_length: *n,
         stop: 1000,
-        _iter_num_batches: 20,
+       _iter_num_batches: 20,
         X_labels: *l,
         load_to_memory: True
       },
@@ -121,6 +121,6 @@
   #       char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
   #     }
   #],
-  save_path: '/Tmp/devincol/rnn_skipgram_factored.pkl',
+  save_path: '/Tmp/devincol/rnn_skipgram_factored2.pkl',
   save_freq: 1,
 }

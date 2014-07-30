@@ -174,6 +174,8 @@ class H5RnnSkipgram(H5Shuffle):
     @functools.wraps(Dataset.iterator)
     def iterator(self, batch_size=None, num_batches=None, rng=None,
                  data_specs=None, return_tuple=False, mode=None):
+        if self._iter_num_batches is not None:
+            num_batches = self._iter_num_batches 
         subset_iterator = self._create_subset_iterator(
             mode=mode, batch_size=batch_size, num_batches=num_batches, rng=rng
         )
