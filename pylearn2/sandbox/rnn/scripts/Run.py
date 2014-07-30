@@ -6,27 +6,27 @@ dirname=os.path.abspath(os.path.dirname(__file__))
 
 def get_hparams(fname,train):
    
-    n_hids = 1000
-    stop = 1e5
+    n_hids = '1e3'
+    stop = '1e5'
     postfix = '_clip'
     
     save_path = os.path.join('result/%s_'%time.strftime("%m%d"))
     #if not os.path.exists(save_path):
     #    os.makedirs(save_path)
     save_path += fname \
-        +'_'+ str(n_hids) \
-        +'_'+ str(int(stop)) \
+        +'_'+ n_hids \
+        +'_'+ stop \
         + postfix
 
     if '.RecursiveConvolutionalLayer' in train:
         hparams = {
-            'n_hids': n_hids,
-            'stop': stop,
+            'n_hids': eval(n_hids),
+            'stop': eval(stop),
             'save_path': save_path}
     elif '.H5RnnSkipgram' in train:
         hparams = {
-            'n_hids': n_hids,
-            'stop': stop,
+            'n_hids': eval(n_hids),
+            'stop': eval(stop),
             'save_path': save_path}
     return hparams
 
