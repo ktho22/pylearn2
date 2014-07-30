@@ -37,8 +37,8 @@ with tables.open_file(embeddings_path) as f:
     valid_embeddings = node1[:]
     node2 = f.get_node('/embeddings_train')
     train_embeddings = node2[:]
-# all_embeddings = np.concatenate((valid_embeddings, train_embeddings))
-all_embeddings = train_embeddings
+all_embeddings = np.concatenate((valid_embeddings, train_embeddings))
+#all_embeddings = train_embeddings
 print all_embeddings.shape
 with open('/data/lisatmp3/devincol/normalization.pkl') as f:
     (means, stds) = cPickle.load(f)

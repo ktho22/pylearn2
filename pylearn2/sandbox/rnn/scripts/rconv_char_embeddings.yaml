@@ -52,6 +52,10 @@
         stop: *stop
       },
     },
+    #  cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {
+    #  clipping_value: 1,
+    #  cost: !obj:pylearn2.costs.mlp.Default {}
+    #},
   },
   save_path: %(save_path)s, 
   save_freq: 1,
