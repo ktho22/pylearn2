@@ -30,18 +30,15 @@ class RecursiveConvolutionalLayer(mlp.Layer):
         W_hh,_,_ = scipy.linalg.svd(W_hh)
         self.W_hh = sharedX(0.9 * W_hh)
         self.W_hh.name = self.layer_name + '_W'
-        self.params = [self.W_hh]
         
         # Right weight matrix
         U_hh = self.rng.uniform(-self.irange, self.irange, (self.dim, self.dim))
         U_hh,_,_ = scipy.linalg.svd(U_hh)
         self.U_hh = sharedX(0.9 * U_hh)
         self.U_hh.name = self.layer_name + '_U'
-        self.params = [self.U_hh]
         
         # Bias
         self.b_hh = sharedX(np.zeros((self.dim,)), name=self.layer_name + '_b')
-        self.params += [self.b_hh]
         
         # gaters
         self.GW_hh = self.rng.uniform(-self.irange, self.irange, (self.dim, 3))
@@ -51,7 +48,7 @@ class RecursiveConvolutionalLayer(mlp.Layer):
         self.GW_hh.name, self.GU_hh.name = [ self.layer_name + '_' + param for param in ['GW', 'GU'] ]
         
         self.Gb_hh = sharedX(np.zeros((3,)), name=self.layer_name + '_Gb')
-        self.params.extend([self.GW_hh, self.GU_hh, self.Gb_hh])
+        self.params=[self.W_hh, self.U_hh, self.b_hh, self.GW_hh, self.GU_hh, self.Gb_hh]
         
         self.output_space = VectorSpace(dim=self.dim)
         self.input_space = space
