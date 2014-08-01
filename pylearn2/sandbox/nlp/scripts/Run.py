@@ -26,6 +26,11 @@ def get_hparams(fname,train):
             'n_hids': n_hids,
             'stop': stop,
             'save_path': save_path}
+    elif 'schwenkShuffle' in fname:
+        hparams = {
+            'n_hids': n_hids,
+            'stop': stop,
+            'save_path' save_path}
     return hparams
 
 for arg in sys.argv:

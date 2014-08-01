@@ -1,11 +1,11 @@
 
 !obj:pylearn2.train.Train {
   dataset: !obj:pylearn2.sandbox.nlp.datasets.shuffle2.H5Shuffle {
-    path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.shuffled.en.h5',
+    path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
     node: 'none', #('/phrases', '/indices'),
     which_set: 'train',
     frame_length: &n 7,
-    stop: 50000000,
+    stop: 10000000,
     load_to_memory: True,
     _iter_num_batches: 1000,
     X_labels: &l 30000,
@@ -47,13 +47,13 @@
     learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
     monitoring_dataset: {
       'valid': !obj:pylearn2.sandbox.nlp.datasets.shuffle2.H5Shuffle {
-        path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.shuffled.en.h5',
+        path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
         node: 'none', # ('/phrases', '/indices'),
         which_set: 'valid',
         frame_length: *n,
-        stop: 1010000,
-        start: 1000000,
-        _iter_num_batches: 40,
+        start: 10000000,
+        stop:  10800000,
+        _iter_num_batches: 20,
         X_labels: *l,
         load_to_memory: True,
         schwenk: True,
