@@ -35,9 +35,7 @@ class Word2Vec(VectorSpacesDataset, TextDatasetMixin):
     def __init__(self, which_set, stop= None):
         assert which_set in ['train', 'valid']
 
-        if stop == 'None':
-            stop = None
-        
+        stop = eval(stop)
         # TextDatasetMixin parameters
         self._unknown_index = 0
         self._end_of_word_index = 100
