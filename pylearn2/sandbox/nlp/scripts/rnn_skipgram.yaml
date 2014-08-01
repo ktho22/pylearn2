@@ -6,10 +6,10 @@
     which_set: 'train',
     frame_length: &n 7,
     stop: 100000000,
-    _iter_num_batches: 100,
+    _iter_num_batches: 1000,
     X_labels: &l 15000, 
     load_to_memory: True,
-    cache_size: 100000,
+    cache_size: 500000,
     cache_delta: 10000
   },
   model: !obj:pylearn2.models.mlp.MLP {
@@ -29,8 +29,8 @@
      #!obj:pylearn2.sandbox.rnn.models.rnn.Recurrent {
      !obj:pylearn2.sandbox.rnn.models.rnn.FactoredMultiplicativeRUGatedRecurrent {
         layer_name: 'recurrent_layer',
-        proj_dim:  256,
-        dim: 512,
+        proj_dim:  512,
+        dim: 1024,
         max_labels: *char_labels,
         irange: 0.01,
         indices: [-1]
@@ -80,7 +80,7 @@
   },
   algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
     batch_size: 32, #256,
-    learning_rate: .0001,
+    learning_rate: .000001,
     learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
     monitoring_dataset: {
      'valid': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
@@ -99,7 +99,7 @@
         which_set: 'train',
         frame_length: *n,
         stop: 1000,
-       _iter_num_batches: 20,
+       _iter_num_batches: 25,
         X_labels: *l,
         load_to_memory: True
       },
@@ -121,6 +121,6 @@
   #       char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
   #     }
   #],
-  save_path: '/Tmp/devincol/rnn_skipgram_factored2.pkl',
+  save_path: '/Tmp/devincol/rnn_skipgram_factored1024.pkl',
   save_freq: 1,
 }

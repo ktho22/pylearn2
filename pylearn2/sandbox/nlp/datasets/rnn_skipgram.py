@@ -83,12 +83,9 @@ class H5RnnSkipgram(H5Shuffle):
         targets_source = tuple('target'+str(i) for i in range(len(targets_space)))
 
         spaces = [features_space] + targets_space
-        print "Space len", len(spaces)
         space = CompositeSpace(spaces)
         source = (features_source,)+ targets_source
-        print "source len", len(source)
         self.data_specs = (space, source)
-        print self.data_specs
 
         def getFeatures(indexes):
             """
@@ -150,7 +147,6 @@ class H5RnnSkipgram(H5Shuffle):
             lambda indexes: getTarget(5, indexes)]
         # targetFNs = [(lambda indexes: getTarget(i, indexes)) for i in range(len(targets_space))]
         self.sourceFNs = {'target'+str(i): targetFNs[i] for i in range(len(targets_space))}
-        print "sourceFNs", self.sourceFNs
         self.sourceFNs['features'] =  getFeatures
       
     def _load_dicts(self):

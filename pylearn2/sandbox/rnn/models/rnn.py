@@ -662,10 +662,11 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
 
         # for get_layer_monitoring channels
         self._params = [self._parameters[key] for key in ['W', 'U', 'b']]
+        self._all_params = self._parameter.values()
 
     @wraps(Layer.get_params)
     def get_params(self):
-        return self._parameters.values()
+        return self._all_params
         
     @wraps(Layer.fprop)
     def fprop(self, state_below):
@@ -687,9 +688,9 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
         state_in = (tensor.dot(proj, self._parameters['W']))
 
         state_z = (tensor.dot(proj, self._parameters['Wz']) 
-                         + self._parameters['bz'])
+                   + self._parameters['bz'])
         state_r = (tensor.dot(proj, self._parameters['Wr'])
-                         + self._parameters['br'])
+                   + self._parameters['br'])
 
         def fprop_step(state_below, mask, state_in, state_z, state_r, 
                        state_before, U, b, Uz, Ur):
@@ -783,6 +784,8 @@ class FactoredMultiplicativeRUGatedRecurrent(Recurrent):
         
         self.__dict__.update(locals())
         del self.self
+        print "______________"
+        print "RNN COST", self.cost
 
     @wraps(Layer.set_input_space)
     def set_input_space(self, space):
