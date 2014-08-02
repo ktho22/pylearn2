@@ -756,7 +756,7 @@ class FiniteDatasetIterator(object):
         assert len(source) == len(sub_spaces)
 
         # If `dataset` is incompatible with the new interface, fall back to the
-        # old interface
+        # old interface.
         if not hasattr(self._dataset, 'get'):
             warnings.warn("dataset is using the old iterator interface which "
                           "is deprecated and will become officially "
