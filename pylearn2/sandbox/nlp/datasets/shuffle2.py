@@ -201,6 +201,7 @@ class H5Shuffle(Dataset):
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
                 node = f.get_node(self.node_name)
+                nexam = len(node)
                 new_data = {'train': node[:int(nexam*0.8)],
                             'valid': node[int(nexam*0.8):int(nexam*0.9)],
                             'test' : node[int(nexam*0.9):]}[which_set]
@@ -239,6 +240,7 @@ class H5Shuffle(Dataset):
         self.node = f.get_node(self.node_name)
 
         if self._load_to_memory:
+            nexam = len(self.node)
             self.samples_sequences = {'train': self.node[:int(nexam*0.8)],
                             'valid': self.node[int(nexam*0.8):int(nexam*0.9)],
                             'test' : self.node[int(nexam*0.9):]}[which_set]
