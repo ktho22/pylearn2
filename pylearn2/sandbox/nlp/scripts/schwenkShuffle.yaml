@@ -70,5 +70,5 @@
  #      }
  # ],
   save_freq: 1,
-  save_path: 'schwenkShuffle384.pkl'
+  save_path: '/Tmp/devincol/schwenkShuffle150.pkl'
 }
