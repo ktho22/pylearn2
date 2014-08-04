@@ -2495,10 +2495,7 @@ class Linear(Layer):
             return 1-((Y*Y_hat).sum(axis=1) / 
                       (Y.norm(2, axis=1)*Y_hat.norm(2, axis=1))) + 1e-8
         else:
-            print "Y.ndim", Y.ndim
-            print "Y_hat", Y_hat.ndim
             rval = T.sqr(Y - Y_hat)
-            print "rval", rval.ndim
             return T.sqr(Y - Y_hat)
 
 

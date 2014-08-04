@@ -31,25 +31,45 @@ class TranslationChars(VectorSpacesDataset, TextDatasetMixin):
     which_set : str
         Either `train` or `valid`
     """
-    def __init__(self, which_set, stop=None):
+    def __init__(self, which_set, stop=None, start=0):
         assert which_set in ['train', 'valid']
         self._stop = stop
+        self._start = start
         # TextDatasetMixin parameters
         self._unknown_index = 0
         self._case_sensitive = True
-        with open(preprocess('/data/lisatmp3/devincol/data/translation_vocab_aschar.en.pkl')) as f:
-            self.X = cPickle.load(f)
+
+        if which_set == 'train':
+            assert (stop == None or stop <= 28000), "There are only 29000 words in training set"
+            self._stop = stop
+            if stop is None:
+                self._stop = 28000
+        if which_set == 'valid':
+            assert (stop == None or stop <= 2000), "There are only 1000 words in validation set"
+            if stop is None:
+                self._stop = 30000
+            else: 
+                self._stop = stop + 28000
+            self._start = 29000
+
+        with open('/data/lisatmp3/devincol/data/translation_char_vocab.en.pkl') as f:
+            self._vocabulary = cPickle.load(f)
+
+        with open('/data/lisatmp3/devincol/data/translation_vocab_aschar.en.pkl') as f:
+            raw = cPickle.load(f)[self._start:self._stop]
+            self.X = np.asarray([char_sequence[:, np.newaxis]
+                                 for char_sequence in raw])
+        print "X shape", self.X.shape
 
         # Load the data
         print "loading embeddings"
-        with tables.open_file(preprocess('/data/lisatmp3/chokyun/emb.npy')) as f:
-            self.y = np.load(f)
-            
+        self.y = np.load('/data/lisatmp3/chokyun/emb.npy')[self._start:self._stop]
+        print "y shape", self.y.shape
 
         source = ('features', 'targets')
-        space = CompositeSpace([SequenceDataSpace(IndexSpace(dim=1,
-                                                             max_labels=101)),
-                                VectorSpace(dim=300)])
+        space = CompositeSpace([
+            SequenceDataSpace(IndexSpace(dim=1, max_labels=144)),
+            VectorSpace(dim=620)])
         super(TranslationChars, self).__init__(data=(self.X, self.y),
                                        data_specs=(space, source))
 

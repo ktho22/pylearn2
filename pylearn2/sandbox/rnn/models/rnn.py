@@ -662,7 +662,7 @@ class MultiplicativeRUGatedRecurrent(Recurrent):
 
         # for get_layer_monitoring channels
         self._params = [self._parameters[key] for key in ['W', 'U', 'b']]
-        self._all_params = self._parameter.values()
+        self._all_params = self._parameters.values()
 
     @wraps(Layer.get_params)
     def get_params(self):

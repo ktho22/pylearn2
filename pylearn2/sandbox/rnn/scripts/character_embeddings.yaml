@@ -1,5 +1,5 @@
 !obj:pylearn2.train.Train {
-  dataset: !obj:pylearn2.sandbox.nlp.datasets.word2vec.Word2Vec {
+  dataset: !obj:pylearn2.sandbox.nlp.datasets.translationChars.TranslationChars {
     which_set: 'train',
     stop: 100000
   },
