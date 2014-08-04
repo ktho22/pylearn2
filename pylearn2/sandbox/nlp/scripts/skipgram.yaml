@@ -22,7 +22,7 @@
         dim: 512,
         irange: 0.01
       },
-      !obj:pylearn2.sandbox.nlp.models.mlp.ProjectionLayer {
+      !obj:pylearn2.models.mlp.Linear {
         layer_name: 'target_projection',
         dim: *l,
         irange: 0.01
