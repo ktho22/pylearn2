@@ -751,7 +751,8 @@ class FiniteDatasetIterator(object):
         else:
             sub_spaces = space.components
         assert len(source) == len(sub_spaces)
-        
+        # If `dataset` is incompatible with the new interface, fall back to the
+        # old interface.
         if not hasattr(self._dataset, 'get'):
         
             all_data = self._dataset.get_data()
@@ -834,13 +835,10 @@ class FiniteDatasetIterator(object):
         # If the dataset is incompatible with the new interface, fall back to
         # the old one
         if hasattr(self._dataset, 'get'):
-            raw_data = self._next(next_index)
+            rval = self._next(next_index)
         else:
-            raw_data = self._fallback_next(next_index)
+            rval = self._fallback_next(next_index)
 
-        rval = tuple(
-            fn(raw_data) if fn else raw_data
-            for data, fn in safe_izip(self._raw_data, self._convert))
         if not self._return_tuple and len(rval) == 1:
             rval, = rval
         return rval

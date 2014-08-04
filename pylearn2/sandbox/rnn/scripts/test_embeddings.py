@@ -5,7 +5,7 @@ from scipy.spatial import cKDTree
 from scipy.spatial.distance import cosine
 import theano as t
 
-path = '/data/lisa/exp/kimtaeho/char_embedding/rc_char_embeddings_small.pkl'
+path = '/data/lisa/exp/kimtaeho/char_embedding/0724_rconv_char_embeddings_800_1000.pkl'
 embeddings_path = '/data/lisa/data/word2vec/embeddings.h5'
 chars_path = '/data/lisa/data/word2vec/char_vocab.pkl'
 _path = '/data/lisa/data/word2vec/characters.pkl'
@@ -91,6 +91,7 @@ def run_example(example):
     batch = np.asarray([np.asarray([np.asarray([char])]) for char in example])
     batch = space.np_format_as(batch, space)
     wordvec = fprop(batch)[0]
+    import ipdb;ipdb.set_trace()
     return wordvec
 
 def findClose(wordvec): 

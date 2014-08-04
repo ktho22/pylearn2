@@ -6,31 +6,31 @@ dirname=os.path.abspath(os.path.dirname(__file__))
 
 def get_hparams(fname,train):
    
-    n_hids = 512
-    stop = 100
+    n_hids = '512'
+    stop = 'None'
     
     save_path = os.path.join('result/%s_'%time.strftime("%m%d"))
     #if not os.path.exists(save_path):
     #    os.makedirs(save_path)
     save_path += fname \
-        +'_'+ str(n_hids) \
-        +'_'+  str(stop)
+        +'_'+ n_hids \
+        +'_'+ stop
 
     if '.RecursiveConvolutionalLayer' in train:
         hparams = {
-            'n_hids': n_hids,
-            'stop': stop,
+            'n_hids': eval(n_hids),
+            'stop': eval(stop),
             'save_path': save_path}
     elif '.H5RnnSkipgram' in train:
         hparams = {
-            'n_hids': n_hids,
-            'stop': stop,
+            'n_hids': eval(n_hids),
+            'stop': eval(stop),
             'save_path': save_path}
     elif 'schwenkShuffle' in fname:
         hparams = {
-            'n_hids': n_hids,
-            'stop': stop,
-            'save_path' save_path}
+            'n_hids': eval(n_hids),
+            'stop': eval(stop),
+            'save_path': save_path}
     return hparams
 
 for arg in sys.argv:
