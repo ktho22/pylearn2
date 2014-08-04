@@ -160,7 +160,6 @@ class H5Shuffle(Dataset):
 		#sequences.append(self.nodep[i])
 	    #sequences = self.node[indexes]
             # sequences = self.samples_sequences[indexes]
-
             # Get random start point for ngram
             wis = [numpy.random.randint(0, len(s)-self.frame_length+1) for s in sequences]
             X = numpy.asarray([s[wi:self.frame_length+wi] for s, wi in zip(sequences, wis)])
@@ -195,11 +194,11 @@ class H5Shuffle(Dataset):
         #self.node = f.get_node(self.node_name)
         with tables.open_file(self.base_path) as f:
             if self.schwenk:
-                table_name, index_name = '/phrases', '/indices'
-                indices = f.get_node(index_name)[start:stop]
+                table_name, index_name = '/phrases', '/long_indices'
+                indices = f.get_node(index_name)
                 first_word = indices[0]['pos']
                 last_word = indices[-1]['pos'] + indices[-1]['length']
-                words = f.get_node(table_name)[first_word:last_word]
+                words = f.get_node(table_name)
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
                 node = f.get_node(self.node_name)
@@ -229,13 +228,12 @@ class H5Shuffle(Dataset):
 	f = tables.open_file(self.base_path)
 
         if self.schwenk:
-            table_name, index_name = '/phrases', '/indices'
+            table_name, index_name = '/phrases', '/long_indices'
             indices = f.get_node(index_name)[start:stop]
-            first_word = indices[0]['pos']
-            last_word = indices[-1]['pos'] + indices[-1]['length']
-            words = f.get_node(table_name)[first_word:last_word]
+            words = f.get_node(table_name)
             self.samples_sequences = [words[i['pos']:i['pos']+i['length']] for i in indices]
             self.num_examples = len(indices)
+
             f.close()
             return
 
