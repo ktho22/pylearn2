@@ -32,38 +32,62 @@ class TranslationChars(VectorSpacesDataset, TextDatasetMixin):
         Either `train` or `valid`
     """
     def __init__(self, which_set, stop=None, start=0):
-        assert which_set in ['train', 'valid']
+        assert which_set in ['train', 'valid', 'train_cost']
         self._stop = stop
         self._start = start
         # TextDatasetMixin parameters
         self._unknown_index = 0
         self._case_sensitive = True
 
-        if which_set == 'train':
-            assert (stop == None or stop <= 28000), "There are only 29000 words in training set"
-            self._stop = stop
-            if stop is None:
-                self._stop = 28000
-        if which_set == 'valid':
-            assert (stop == None or stop <= 2000), "There are only 1000 words in validation set"
-            if stop is None:
-                self._stop = 30000
-            else: 
-                self._stop = stop + 28000
-            self._start = 29000
+        valid_start = 10000
+        train_cost_start = 11000
+        train_cost_stop = 12000
+
+        # if which_set == 'train':
+        #     assert (stop == None or stop <= 28000), "There are only 29000 words in training set"
+        #     self._stop = stop
+        #     if stop is None:
+        #         self._stop = 28000
+        # if which_set == 'valid':
+        #     assert (stop == None or stop <= 2000), "There are only 1000 words in validation set"
+        #     if stop is None:
+        #         self._stop = 30000
+        #     else: 
+        #         self._stop = stop + 28000
+        #     self._start = 29000
 
         with open('/data/lisatmp3/devincol/data/translation_char_vocab.en.pkl') as f:
             self._vocabulary = cPickle.load(f)
 
         with open('/data/lisatmp3/devincol/data/translation_vocab_aschar.en.pkl') as f:
-            raw = cPickle.load(f)[self._start:self._stop]
+            raw = cPickle.load(f)
+            if which_set == 'train':
+                raw1 = raw[:valid_start]
+                print "raw1", raw1.shape
+                raw2 = raw[train_cost_stop:]
+                raw = np.concatenate((raw1, raw2))
+            elif which_set == 'valid':
+                raw = raw[valid_start:train_cost_start]
+            else:
+                raw = raw[train_cost_start:train_cost_stop]
             self.X = np.asarray([char_sequence[:, np.newaxis]
                                  for char_sequence in raw])
         print "X shape", self.X.shape
 
         # Load the data
         print "loading embeddings"
-        self.y = np.load('/data/lisatmp3/chokyun/emb.npy')[self._start:self._stop]
+        
+        raw = np.load('/data/lisatmp3/chokyun/emb.npy')
+        if which_set == 'train':
+            raw1 = raw[:valid_start]
+            print "raw1 shape", raw1.shape
+            raw2 = raw[train_cost_stop:-1]
+            self.y = np.concatenate((raw1, raw2))
+        elif which_set == 'valid':
+            self.y = raw[valid_start:train_cost_start]
+        else:
+            self.y = raw[train_cost_start:train_cost_stop]
+        
         print "y shape", self.y.shape
 
         source = ('features', 'targets')
