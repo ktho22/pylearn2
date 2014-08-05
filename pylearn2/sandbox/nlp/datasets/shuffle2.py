@@ -310,6 +310,7 @@ class H5Shuffle(Dataset):
                 stop = self._cache_delta + start
 
             self._next_cache_index = stop 
+            assert self._loading == False, "Cannot have 2 processes at once"
             self._loading = True
             p = Process(target=self._parallel_load_data, args=(start, stop, self._data_queue))
             p.start()
@@ -319,6 +320,7 @@ class H5Shuffle(Dataset):
             self.samples_sequences = self.samples_sequences[self._cache_delta:] + self._data_queue.get()
             #print "Queue is empty", self._data_queue.empty()
             self._num_since_last_load = 0
+            assert self._data_queue.empty(), "Cannot have 2 things on queue at once"
             self._loading = False
             #print "got stuff from queue"
 
