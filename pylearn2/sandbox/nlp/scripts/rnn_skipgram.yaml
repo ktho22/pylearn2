@@ -95,8 +95,8 @@
   },
   algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
     batch_size: 32, #256,
-    learning_rate: .000001,
-    learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
+    learning_rate: 0.01, #.000001,
+    #learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
     monitoring_dataset: {
       'valid': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
         path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',

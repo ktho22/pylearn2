@@ -101,6 +101,8 @@ class H5RnnSkipgram(H5Shuffle):
             else:
                 sequences = [self.node[i] for i in indexes]
             # Get random start point for ngram
+            for s in sequences:
+                print len(s)
             wis = [numpy.random.randint(0, len(s)-self.frame_length+1, 1)[0] for s in sequences]
 
             ngrams = numpy.asarray([s[wi:self.frame_length+wi] for s, wi in zip(sequences, wis)])

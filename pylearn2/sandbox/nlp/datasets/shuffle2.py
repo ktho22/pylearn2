@@ -201,7 +201,6 @@ class H5Shuffle(Dataset):
                 words = f.get_node(table_name)
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
-                print "Is not schwenk"
                 node = f.get_node(self.node_name)
                 new_data = node[start:stop]
         queue.put(new_data)
@@ -297,7 +296,7 @@ class H5Shuffle(Dataset):
     def _maybe_load_data(self):
        # print "In maybe load data"
         if self._num_since_last_load >= self._cache_delta and not self._loading:
-            print "need to load data"
+            #print "need to load data"
 
             # If we would go over the end of the dataset by loading more data,
             # we start over from the beginning of the dataset.
