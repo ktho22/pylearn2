@@ -64,7 +64,8 @@ all_embeddings = (all_embeddings - means)/stds
 space = model.get_input_space()
 batch_var = space.make_theano_batch(batch_size=1)
 ipdb.set_trace()
-fprop = t.function([batch_var], model.fprop(batch_var))
+fprop = t.function([batch_var], model.layers[0].fprop(batch_var))
+#fprop = t.function([batch_var], model.fprop(batch_var))
 #print "Batch_var shape", batch_var.eval().shape
 
 print "Calculating projections"
