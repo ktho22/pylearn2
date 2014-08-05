@@ -73,6 +73,7 @@ class H5RnnSkipgram(H5Shuffle):
         self._word_dict_path = word_dict
         self._char_dict_path = char_dict
         self._load_dicts()
+        self.word_labels = word_labels
         features_space = SequenceDataSpace(IndexSpace(dim=1, max_labels=char_labels))
         features_source = 'features'
 
