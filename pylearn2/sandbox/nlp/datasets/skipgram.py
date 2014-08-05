@@ -37,7 +37,7 @@ class H5Skipgram(H5Shuffle):
                  start=0, stop=None, X_labels=None,
 		 _iter_num_batches=None, rng=_default_seed, 
                  load_to_memory=False, cache_size=None,
-                 cache_delta=None):
+                 cache_delta=None, schwenk=False):
         """
         Parameters
         ----------
@@ -62,7 +62,7 @@ class H5Skipgram(H5Shuffle):
                  start=start, stop=stop, X_labels=X_labels,
 		 _iter_num_batches=_iter_num_batches, rng=rng, 
                  load_to_memory=load_to_memory, cache_size=cache_size,
-                 cache_delta=cache_delta)
+                 cache_delta=cache_delta, schwenk=schwenk)
 
         self.frame_length = frame_length
 

@@ -1246,7 +1246,7 @@ class Softmax(Layer):
 
         if self.no_affine:
             return OrderedDict()
-
+     
         W = self.W
 
         assert W.ndim == 2
@@ -1324,7 +1324,6 @@ class Softmax(Layer):
 
             row_norms = T.sqrt(sq_W.sum(axis=1))
             col_norms = T.sqrt(sq_W.sum(axis=0))
-        
             rval = OrderedDict([('row_norms_min',  row_norms.min()),
                                 ('row_norms_mean', row_norms.mean()),
                                 ('row_norms_max',  row_norms.max()),
