@@ -195,12 +195,13 @@ class H5Shuffle(Dataset):
         with tables.open_file(self.base_path) as f:
             if self.schwenk:
                 table_name, index_name = '/phrases', '/long_indices'
-                indices = f.get_node(index_name)
+                indices = f.get_node(index_name)[start:stop]
                 first_word = indices[0]['pos']
                 last_word = indices[-1]['pos'] + indices[-1]['length']
                 words = f.get_node(table_name)
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
+                print "Is not schwenk"
                 node = f.get_node(self.node_name)
                 new_data = node[start:stop]
         queue.put(new_data)
@@ -233,7 +234,6 @@ class H5Shuffle(Dataset):
             node = f.get_node(index_name)
             indices = node[start:stop]
             words = f.get_node(table_name)
-            print "NUM ROWS", node.nrows
             if self._using_cache:
                 assert self._max_data_index <= node.nrows, ("Dataset only has %d row", node.nrows)
             self.samples_sequences = [words[i['pos']:i['pos']+i['length']] for i in indices]
@@ -297,7 +297,7 @@ class H5Shuffle(Dataset):
     def _maybe_load_data(self):
        # print "In maybe load data"
         if self._num_since_last_load >= self._cache_delta and not self._loading:
-            #print "need to load data"
+            print "need to load data"
 
             # If we would go over the end of the dataset by loading more data,
             # we start over from the beginning of the dataset.
@@ -314,6 +314,7 @@ class H5Shuffle(Dataset):
             self._loading = True
             p = Process(target=self._parallel_load_data, args=(start, stop, self._data_queue))
             p.start()
+            #self._parallel_load_data(start, stop, self._data_queue)
 
         if not self._data_queue.empty():
             #print "queue has stuff"
