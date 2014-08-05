@@ -12,7 +12,8 @@ from pylearn2.utils import sharedX
 from pylearn2.utils import wraps
 from pylearn2.sandbox.nlp.linear.matrixmul import MatrixMul
 from theano.compat.python2x import OrderedDict
-
+from pylearn2.sandbox.rnn.space import SequenceSpace
+from theano import scan
 
 class Softmax(mlp.Softmax):
     """
@@ -145,3 +146,62 @@ class ProjectionLayer(Layer):
         assert W.name is not None
         params = [W]
         return params
+
+class PartialBag(Layer):
+    """
+    A recurrent neural network layer using the hyperbolic tangent
+    activation function, passing on all hidden states or a selection
+    of them to the next layer.
+
+    The hidden state is initialized to zeros.
+
+    Parameters
+    ----------
+    dim : int
+        The number of elements in the hidden layer
+    layer_name : str
+        The name of the layer. All layers in an MLP must have a unique name.
+    """
+    def __init__(self, dim, layer_name):
+        self.dim = 3*dim
+        self.__dict__.update(locals())
+        self.rnn_friendly = True
+        del self.self
+        super(PartialBag, self).__init__()
+
+    @wraps(Layer.set_input_space)
+    def set_input_space(self, space):
+        if (not isinstance(space, SequenceSpace) or
+                not isinstance(space.space, VectorSpace)):
+            raise ValueError("Recurrent layer needs a SequenceSpace("
+                             "VectorSpace) as input but received  %s instead"
+                             % (space))
+        self.input_space = space
+        
+        self.output_space = VectorSpace(dim=self.dim*3)
+
+    @wraps(Layer.get_params)
+    def get_params(self):
+        return []
+
+    @wraps(Layer.fprop)
+    def fprop(self, state_below):
+        state_below, mask = state_below
+        shape = state_below.shape
+        print state_below.ndim
+        range_ = T.arange(shape[0])
+        first_chars = state_below[range_, 0]
+        last_indices = T.sum(mask, axis=1, dtype='int64') -1
+        
+        #last_chars = state_below[range_, last_indices]
+        def fprop_step(state_below, last_index):
+            print "last_index ndim", last_index.ndim, last_index.dtype
+            middle_chars = T.sum(state_below[1:last_index], axis=0)
+            last_chars = state_below[last_index]
+            return middle_chars, last_chars
+        (middle_chars, last_chars), updates = scan(fn=fprop_step, sequences=[state_below, last_indices],
+                                 #    outputs_info=[]
+                                 )
+
+        rval = T.concatenate((first_chars.T, middle_chars.T, last_chars.T), axis=0).T
+        return rval

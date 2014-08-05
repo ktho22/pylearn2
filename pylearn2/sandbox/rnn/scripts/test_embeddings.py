@@ -5,7 +5,7 @@ from scipy.spatial import cKDTree
 from scipy.spatial.distance import cosine
 import theano as t
 
-path = '../pkls/mult_char_embeddings_cosine.pkl'
+path = '../pkls/mult_char_embeddings_cosine2.pkl'
 embeddings_path = '/data/lisa/data/word2vec/embeddings.h5'
 chars_path = '/data/lisa/data/word2vec/char_vocab.pkl'
 _path = '/data/lisa/data/word2vec/characters.pkl'
