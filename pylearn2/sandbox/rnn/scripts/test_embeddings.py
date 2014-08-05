@@ -1,11 +1,12 @@
-import cPickle
-import tables
+import cPickle, ipdb
+import tables, sys
 import numpy as np
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cosine
 import theano as t
 
-path = '/data/lisa/exp/kimtaeho/char_embedding/0724_rconv_char_embeddings_800_1000.pkl'
+path = sys.argv[-1]
+#path = '/data/lisa/exp/kimtaeho/char_embedding/0724_rconv_char_embeddings_800_1000.pkl'
 embeddings_path = '/data/lisa/data/word2vec/embeddings.h5'
 chars_path = '/data/lisa/data/word2vec/char_vocab.pkl'
 _path = '/data/lisa/data/word2vec/characters.pkl'
@@ -62,6 +63,7 @@ all_embeddings = (all_embeddings - means)/stds
 
 space = model.get_input_space()
 batch_var = space.make_theano_batch(batch_size=1)
+ipdb.set_trace()
 fprop = t.function([batch_var], model.fprop(batch_var))
 #print "Batch_var shape", batch_var.eval().shape
 
@@ -88,10 +90,10 @@ def closest(vec, n):
     return words
     
 def run_example(example):
+    ipdb.set_trace()
     batch = np.asarray([np.asarray([np.asarray([char])]) for char in example])
     batch = space.np_format_as(batch, space)
     wordvec = fprop(batch)[0]
-    import ipdb;ipdb.set_trace()
     return wordvec
 
 def findClose(wordvec): 
@@ -102,13 +104,19 @@ def findClose(wordvec):
 
 def run_string(word):
     L = stringToArr(word)
+    # Character embedding
     close = findClose(run_example(L))
+    # Word embedding
+    #close = findClose(L)
     print word, ":", close
 
 def run_index(index):
+    # Character embedding
     close = findClose(run_example(all_chars[index]))
+    # Word embedding
+    #close = findClose(all_chars[index])
     print makeWord(index), ":", close
 
 if __name__ == "__main__":
-    #map(run_string, ['monarch', 'democracy', 'political', 'raspberry', 'blueberry', 'accomplishment', 'applying', 'application'])
+    map(run_string, ['monarch', 'democracy', 'political', 'raspberry', 'blueberry', 'accomplishment', 'applying', 'application'])
     map(run_index, range(0, 10))

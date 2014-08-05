@@ -1,6 +1,6 @@
 
 !obj:pylearn2.train.Train {
-  dataset: !obj:pylearn2.sandbox.nlp.datasets.shuffle_substitution.H5Shuffle {
+  dataset: !obj:pylearn2.sandbox.nlp.datasets.shuffle_sub.H5Shuffle {
     path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
     node: 'none', #('/phrases', '/indices'),
     which_set: 'train',
@@ -36,7 +36,7 @@
       },
       !obj:pylearn2.models.mlp.Sigmoid {
         layer_name: 'output',
-        dim: 6, # n - 1
+        dim: *n, 
         irange: 0.01
       },
     ],
@@ -46,7 +46,7 @@
     learning_rate: .000001,
     learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
     monitoring_dataset: {
-      'valid': !obj:pylearn2.sandbox.nlp.datasets.shuffle2.H5Shuffle {
+      'valid': !obj:pylearn2.sandbox.nlp.datasets.shuffle_sub.H5Shuffle {
         path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
         node: 'none', # ('/phrases', '/indices'),
         which_set: 'valid',
@@ -56,7 +56,7 @@
         load_to_memory: True,
         schwenk: True,
       },
-      'train': !obj:pylearn2.sandbox.nlp.datasets.shuffle2.H5Shuffle {
+      'train': !obj:pylearn2.sandbox.nlp.datasets.shuffle_sub.H5Shuffle {
         path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
         node: 'none', # ('/phrases', '/indices'),
         which_set: 'train',
