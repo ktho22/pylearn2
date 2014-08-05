@@ -23,6 +23,7 @@ from pylearn2.utils import serial
 from pylearn2.utils import safe_zip
 from pylearn2.utils.iteration import FiniteDatasetIterator
 from multiprocessing import Process, Queue
+import ipdb
 
 def index_from_one_hot(one_hot):
     return numpy.where(one_hot == 1.0)[0][0]
@@ -200,7 +201,7 @@ class H5Shuffle(Dataset):
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
                 node = f.get_node(self.node_name)
-                nexam= len(node)
+                nexam = len(node)
                 new_data = {'train': node[:int(nexam*0.8)],
                             'valid': node[int(nexam*0.8):int(nexam*0.9)],
                             'test' : node[int(nexam*0.9):]}[which_set]
@@ -250,6 +251,7 @@ class H5Shuffle(Dataset):
                 self.num_examples = self.node.nrows
             else:   
                 self.num_examples = stop - start 
+        return self.samples_sequences
  
     def _validate_source(self, source):
         """
