@@ -1,22 +1,26 @@
 
 !obj:pylearn2.train.Train {
   dataset: !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
-    path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_train.h5',
-    node: '/double_filtered_binarized_corpus_train',
+    path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
+    node: 'none', #('/phrases', '/indices'),
     which_set: 'train',
     frame_length: &n 7,
-    stop: 100000000,
-    _iter_num_batches: 1000,
-    X_labels: &l 15000, 
+    word_dict: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/vocab.en.pkl',
+    char_dict: '/data/lisatmp3/devincol/data/translation_char_vocab.en.pkl',
+    stop: 10000000,
     load_to_memory: True,
-    cache_size: 500000,
-    cache_delta: 10000
+    _iter_num_batches: 300,
+    word_labels: &w 30000,
+    char_labels: &c 145,
+    cache_size: 100000,
+    cache_delta: 10000,
+    schwenk: True,
   },
   model: !obj:pylearn2.models.mlp.MLP {
     input_space: !obj:pylearn2.sandbox.rnn.space.SequenceSpace {
       space: !obj:pylearn2.space.IndexSpace {
         dim: 1,
-        max_labels: &char_labels 213, # Number of different characters + 1 for eow
+        max_labels: *c # Number of different characters + 1 for eow
       },
     },
     target_source: ['target0', 'target1', 'target2', 'target3', 'target4', 'target5' ],
@@ -27,52 +31,63 @@
      #   irange: 0.01
      #  },
      #!obj:pylearn2.sandbox.rnn.models.rnn.Recurrent {
-     !obj:pylearn2.sandbox.rnn.models.rnn.FactoredMultiplicativeRUGatedRecurrent {
+     !obj:pylearn2.sandbox.rnn.models.rnn.MultiplicativeRUGatedRecurrent {
         layer_name: 'recurrent_layer',
-        proj_dim:  512,
-        dim: 1024,
-        max_labels: *char_labels,
+        proj_dim:  256,
+        dim: 384,
+        max_labels: *c,
         irange: 0.01,
         indices: [-1]
+      },
+      !obj:pylearn2.models.mlp.Linear {
+        layer_name: 'outputEmbedding',
+        dim: *w,
+        irange: 0.01
       },
      !obj:pylearn2.models.mlp.CompositeLayer {
         layer_name: 'composite_layer',
         layers: 
         [!obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
-            n_classes: *l,
+            n_classes: *w,
             layer_name: 'h0',
             irange: 0.01,
-            binary_target_dim: 1
+            binary_target_dim: 1,
+            no_affine: True,
           },
           !obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
-           n_classes: *l,
+           n_classes: *w,
             layer_name: 'h1',
             irange: 0.01,
-            binary_target_dim: 1
+            binary_target_dim: 1,
+            no_affine: True,
           },
           !obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
-            n_classes: *l,
+            n_classes: *w,
             layer_name: 'h2',
             irange: 0.01,
-            binary_target_dim: 1
+            binary_target_dim: 1,
+            no_affine: True,
           },
           !obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
-            n_classes: *l,
+            n_classes: *w,
             layer_name: 'h3',
             irange: 0.01,
-            binary_target_dim: 1
+            binary_target_dim: 1,
+            no_affine: True,
           },
           !obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
-            n_classes: *l,
+            n_classes: *w,
             layer_name: 'h4',
             irange: 0.01,
-            binary_target_dim: 1
+            binary_target_dim: 1,
+            no_affine: True,
           },
           !obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
-            n_classes: *l,
+            n_classes: *w,
             layer_name: 'h5',
             irange: 0.01,
-            binary_target_dim: 1
+            binary_target_dim: 1,
+            no_affine: True,
           }
         ]
       }
@@ -83,26 +98,37 @@
     learning_rate: .000001,
     learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
     monitoring_dataset: {
-     'valid': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
-        path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_valid.h5',
-        node: '/double_filtered_binarized_corpus_valid',
+      'valid': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
+        path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
+        node: 'none', #('/phrases', '/indices'),
         which_set: 'valid',
         frame_length: *n,
-        stop: 5000,
-        _iter_num_batches: 50,
-        X_labels: *l,
-        load_to_memory: True
+        word_dict: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/vocab.en.pkl',
+        char_dict: '/data/lisatmp3/devincol/data/translation_char_vocab.en.pkl',
+        start: 10000000,
+        stop: 10005000,
+        load_to_memory: True,
+        _iter_num_batches: 190,
+        word_labels: *w,
+        char_labels: *c,
+        schwenk: True,
       },
      'train': !obj:pylearn2.sandbox.nlp.datasets.rnn_skipgram.H5RnnSkipgram {
-        path: '/data/lisatmp3/pougetj/double_filtered_binarized_corpus_train.h5',
-        node: '/double_filtered_binarized_corpus_train',
-        which_set: 'train',
+        path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
+        node: 'none', #('/phrases', '/indices'),
+        which_set: 'valid',
         frame_length: *n,
-        stop: 1000,
-       _iter_num_batches: 25,
-        X_labels: *l,
-        load_to_memory: True
-      },
+        word_dict: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/vocab.en.pkl',
+        char_dict: '/data/lisatmp3/devincol/data/translation_char_vocab.en.pkl',
+        start: 100000,
+        stop: 105000,
+        load_to_memory: True,
+        _iter_num_batches: 190,
+        word_labels: *w,
+        char_labels: *c,
+        schwenk: True,
+      
+     },
     },
     cost: !obj:pylearn2.sandbox.rnn.costs.gradient_clipping.GradientClipping {
       clipping_value: 1,
@@ -114,13 +140,13 @@
   #     !obj:pylearn2.train_extensions.WordRelationship {
   #       vocab: "/data/lisatmp3/pougetj/vocab.pkl",
   #       questions: "/data/lisatmp3/pougetj/questions-words.txt",
-  #       vocab_size: *l,
+  #       vocab_size: *w,
   #       UNK: 1,
   #       n_batches: 4, 
   #       use_chars: True,
   #       char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
   #     }
   #],
-  save_path: '/Tmp/devincol/rnn_skipgram_factored1024.pkl',
+  save_path: '/Tmp/devincol/rnn_skipgram_mult_schwenk_256_384.pkl',
   save_freq: 1,
 }

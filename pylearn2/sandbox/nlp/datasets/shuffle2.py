@@ -37,7 +37,7 @@ class H5Shuffle(Dataset):
                  start=0, stop=None, X_labels=None,
 		 _iter_num_batches=None, rng=_default_seed, 
                  load_to_memory=False, cache_size=None,
-                 cache_delta=None):
+                 cache_delta=None, schwenk=False):
         """
         Parameters
         ----------
@@ -87,7 +87,7 @@ class H5Shuffle(Dataset):
 	else:
 		self._iter_num_batches = _iter_num_batches
         self._load_to_memory = load_to_memory
-
+        self.schwenk = schwenk
         self._using_cache = False
         #self.y_labels = y_labels
         if cache_size is not None:
@@ -194,8 +194,16 @@ class H5Shuffle(Dataset):
         #with tables.open_file(self.base_path) as f:
         #self.node = f.get_node(self.node_name)
         with tables.open_file(self.base_path) as f:
-            node = f.get_node(self.node_name)
-            new_data = node[start:stop]
+            if self.schwenk:
+                table_name, index_name = '/phrases', '/indices'
+                indices = f.get_node(index_name)[start:stop]
+                first_word = indices[0]['pos']
+                last_word = indices[-1]['pos'] + indices[-1]['length']
+                words = f.get_node(table_name)[first_word:last_word]
+                new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
+            else:
+                node = f.get_node(self.node_name)
+                new_data = node[start:stop]
         queue.put(new_data)
         #print "Finished loading data"
 
@@ -219,6 +227,18 @@ class H5Shuffle(Dataset):
         print startstop
         (start, stop) = startstop
 	f = tables.open_file(self.base_path)
+
+        if self.schwenk:
+            table_name, index_name = '/phrases', '/indices'
+            indices = f.get_node(index_name)[start:stop]
+            first_word = indices[0]['pos']
+            last_word = indices[-1]['pos'] + indices[-1]['length']
+            words = f.get_node(table_name)[first_word:last_word]
+            self.samples_sequences = [words[i['pos']:i['pos']+i['length']] for i in indices]
+            self.num_examples = len(indices)
+            f.close()
+            return
+
         self.node = f.get_node(self.node_name)
         # with tables.open_file(self.base_path) as f:
         #     print "Loading n-grams..."

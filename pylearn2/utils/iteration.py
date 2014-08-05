@@ -750,7 +750,9 @@ class FiniteDatasetIterator(object):
         else:
             sub_spaces = space.components
         assert len(source) == len(sub_spaces)
-        
+
+        # If `dataset` is incompatible with the new interface, fall back to the
+        # old interface.
         if not hasattr(self._dataset, 'get'):
         
             all_data = self._dataset.get_data()
