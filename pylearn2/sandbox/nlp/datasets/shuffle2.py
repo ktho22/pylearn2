@@ -227,10 +227,15 @@ class H5Shuffle(Dataset):
         (start, stop) = startstop
 	f = tables.open_file(self.base_path)
 
+
         if self.schwenk:
             table_name, index_name = '/phrases', '/long_indices'
-            indices = f.get_node(index_name)[start:stop]
+            node = f.get_node(index_name)
+            indices = node[start:stop]
             words = f.get_node(table_name)
+            print "NUM ROWS", node.nrows
+            if self._using_cache:
+                assert self._max_data_index <= node.nrows, ("Dataset only has %d row", node.nrows)
             self.samples_sequences = [words[i['pos']:i['pos']+i['length']] for i in indices]
             self.num_examples = len(indices)
 
