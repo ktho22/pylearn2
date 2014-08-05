@@ -81,7 +81,7 @@ class TranslationChars(VectorSpacesDataset, TextDatasetMixin):
         if which_set == 'train':
             raw1 = raw[:valid_start]
             print "raw1 shape", raw1.shape
-            raw2 = raw[train_cost_stop:-1]
+            raw2 = raw[train_cost_start:-1]
             self.y = np.concatenate((raw1, raw2))
         elif which_set == 'valid':
             self.y = raw[valid_start:train_cost_start]
