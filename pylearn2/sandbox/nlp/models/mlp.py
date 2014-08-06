@@ -186,22 +186,29 @@ class PartialBag(Layer):
 
     @wraps(Layer.fprop)
     def fprop(self, state_below):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # TODO: if word is 1 char long, don't double count it.
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! This code is incorrect"
+        print "It double counts the character of a single character word"
         state_below, mask = state_below
         shape = state_below.shape
-        print state_below.ndim
-        range_ = T.arange(shape[0])
-        first_chars = state_below[range_, 0]
+        range_ = T.arange(shape[1])
+        first_chars = state_below[0, range_]
         last_indices = T.sum(mask, axis=1, dtype='int64') -1
-        
+        last_chars = state_below[last_indices, range_]
         #last_chars = state_below[range_, last_indices]
-        def fprop_step(state_below, last_index):
-            print "last_index ndim", last_index.ndim, last_index.dtype
-            middle_chars = T.sum(state_below[1:last_index], axis=0)
-            last_chars = state_below[last_index]
-            return middle_chars, last_chars
-        (middle_chars, last_chars), updates = scan(fn=fprop_step, sequences=[state_below, last_indices],
-                                 #    outputs_info=[]
-                                 )
+        middle_chars = T.sum(state_below, axis=1) - first_chars - last_chars
+        # out0 = T.alloc(0., (shape[0], shape[2]))
+        # def fprop_step(state_below, last_index, out):
+        #     middle_chars = T.sum(state_below[1:last_index], axis=1)
+        #     print "state_below", state_below.ndim
+        #     print "middle", middle_chars.ndim
+        #     #last_chars = state_below[last_index]
+        #     return middle_chars#, last_chars
 
-        rval = T.concatenate((first_chars.T, middle_chars.T, last_chars.T), axis=0).T
+        # middle_chars, updates = scan(fn=fprop_step, sequences=[state_below, last_indices],
+        #                              outputs_info=[out0]
+        #                          )
+
+        rval = middle_chars # T.concatenate((first_chars.T, middle_chars.T, last_chars.T), axis=0)
         return rval
