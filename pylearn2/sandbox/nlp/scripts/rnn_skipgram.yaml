@@ -31,10 +31,10 @@
      #   irange: 0.01
      #  },
      #!obj:pylearn2.sandbox.rnn.models.rnn.Recurrent {
-     !obj:pylearn2.sandbox.rnn.models.rnn.MultiplicativeRUGatedRecurrent {
+     !obj:pylearn2.sandbox.rnn.models.rnn.FactoredMultiplicativeRUGatedRecurrent {
         layer_name: 'recurrent_layer',
         proj_dim:  256,
-        dim: 384,
+        dim: 300,
         max_labels: *c,
         irange: 0.01,
         indices: [-1]
@@ -147,6 +147,6 @@
   #       char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
   #     }
   #],
-  save_path: '/Tmp/devincol/rnn_skipgram_mult_schwenk_256_384_noAda.pkl',
+  save_path: '/Tmp/devincol/rnn_skipgram_factored_schwenk_256_300_Ada.pkl',
   save_freq: 1,
 }
