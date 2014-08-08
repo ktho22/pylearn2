@@ -1317,9 +1317,6 @@ class Softmax(Layer):
         else:
             W = self.W
 
-        else:
-            W = self.W
-
             assert W.ndim == 2
 
             sq_W = T.sqr(W)

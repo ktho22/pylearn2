@@ -107,6 +107,6 @@
   #       char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
   #     }
   #],
-  save_path: '/Tmp/devincol/rnn_realskipgram_factored_schwenk_256_300_Ada.pkl',
+  save_path: '/Tmp/kimtaeho/rnn_realskipgram_factored_schwenk_256_300_Ada.pkl',
   save_freq: 1,
 }
