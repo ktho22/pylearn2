@@ -22,7 +22,8 @@ WHITELIST = [
     'RectifiedLinear',
     'Softplus',
     'SpaceConverter',
-    'WindowLayer'
+    'WindowLayer',
+    'PartialBag',
 ]
 
 # These can't be wrapped

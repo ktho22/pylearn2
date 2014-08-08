@@ -8,7 +8,7 @@ import cPickle
 from functools import wraps
 
 import numpy as np
-import tables, ipdb
+import tables
 
 from pylearn2.sandbox.nlp.datasets.text import TextDatasetMixin
 from pylearn2.sandbox.rnn.space import SequenceDataSpace
@@ -37,7 +37,6 @@ class TranslationChars(VectorSpacesDataset, TextDatasetMixin):
         self._start = start
         # TextDatasetMixin parameters
         self._unknown_index = 0
-        self.EOW = 144
         self._case_sensitive = True
 
         valid_start = 10000
@@ -71,13 +70,8 @@ class TranslationChars(VectorSpacesDataset, TextDatasetMixin):
                 raw = raw[valid_start:train_cost_start]
             else:
                 raw = raw[train_cost_start:train_cost_stop]
-            
             self.X = np.asarray([char_sequence[:, np.newaxis]
                                  for char_sequence in raw])
-            for ind, seq in enumerate(self.X):
-                if len(seq)==1:
-                    np.append(self.X[ind],self.EOW)
-
         print "X shape", self.X.shape
 
         # Load the data
@@ -98,7 +92,7 @@ class TranslationChars(VectorSpacesDataset, TextDatasetMixin):
 
         source = ('features', 'targets')
         space = CompositeSpace([
-            SequenceDataSpace(IndexSpace(dim=1, max_labels=145)),
+            SequenceDataSpace(IndexSpace(dim=1, max_labels=144)),
             VectorSpace(dim=620)])
         super(TranslationChars, self).__init__(data=(self.X, self.y),
                                        data_specs=(space, source))

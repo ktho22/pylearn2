@@ -64,24 +64,30 @@ class H5Skipgram(H5Shuffle):
                  load_to_memory=load_to_memory, cache_size=cache_size,
                  cache_delta=cache_delta, schwenk=schwenk)
 
+        self.frame_length = frame_length
+
         features_space = IndexSpace(
             dim=1,
             max_labels=self.X_labels
         )
         features_source = 'features'
 
-        targets_space = IndexSpace(dim=1, max_labels=self.X_labels)
+        targets_space = [
+            IndexSpace(dim=1, max_labels=self.X_labels), 
+            IndexSpace(dim=1, max_labels=self.X_labels),
+            IndexSpace(dim=1, max_labels=self.X_labels),
+            IndexSpace(dim=1, max_labels=self.X_labels),
+            IndexSpace(dim=1, max_labels=self.X_labels),
+            IndexSpace(dim=1, max_labels=self.X_labels)][:self.frame_length-1]
 
-        targets_source = 'targets'
-
-        spaces = [features_space, targets_space]
-        print "Space len", len(spaces)
+        targets_source = tuple('target'+str(i) for i in range(len(targets_space)))
+        #targets_source = ('targets',)
+        spaces = [features_space] + targets_space
         space = CompositeSpace(spaces)
-        source = (features_source, targets_source)
-        print "source len", len(source)
+        source = (features_source,)+ targets_source
         self.data_specs = (space, source)
-        print self.data_specs
-
+        print "Dataspecs", self.data_specs
+        
         def getFeatures(indexes):
             """
             .. todo::
@@ -127,7 +133,7 @@ class H5Skipgram(H5Shuffle):
         #     lambda indexes: getTarget(4, indexes), 
         #     lambda indexes: getTarget(5, indexes)]
         # targetFNs = [(lambda indexes: getTarget(i, indexes)) for i in range(len(targets_space))]
-        #self.sourceFNs = {'target'+str(i): targetFNs[i] for i in range(len(targets_space))}
-        #print "sourceFNs", self.sourceFNs
+        self.sourceFNs = {'target'+str(i): targetFNs[i] for i in range(len(targets_space))}
+       # self.sourceFNs = {'targets': targetFNs[0]}
         self.sourceFNs['features'] =  getFeatures
         self.sourceFNs['targets'] = getTarget

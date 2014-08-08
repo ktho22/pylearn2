@@ -159,7 +159,10 @@ class H5Shuffle(Dataset):
                 sequences = [self.samples_sequences[i] for i in indexes]
             else:
                 sequences = [self.node[i] for i in indexes]
-
+	    #for i in indexes:
+		#sequences.append(self.nodep[i])
+	    #sequences = self.node[indexes]
+            # sequences = self.samples_sequences[indexes]
             # Get random start point for ngram
             wis = [numpy.random.randint(0, len(s)-self.frame_length+1) for s in sequences]
             X = numpy.asarray([s[wi:self.frame_length+wi] for s, wi in zip(sequences, wis)])
@@ -192,11 +195,9 @@ class H5Shuffle(Dataset):
         with tables.open_file(self.base_path) as f:
             if self.schwenk:
                 table_name, index_name = '/phrases', '/long_indices'
-                nexam = len(f.get_node(index_name))
-                indices = {'train': f.get_node(index_name)[:int(nexam*0.8)],
-                           'valid': f.get_node(index_name)[int(nexam*0.8):int(nexam*0.9)],
-                           'test' : f.get_node(index_name)[int(nexam*0.9):]}[which_set]
-                indices = indices[start:stop]
+                indices = f.get_node(index_name)[start:stop]
+                first_word = indices[0]['pos']
+                last_word = indices[-1]['pos'] + indices[-1]['length']
                 words = f.get_node(table_name)
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
@@ -224,16 +225,17 @@ class H5Shuffle(Dataset):
 
         f = tables.open_file(self.base_path)
 
+
         if self.schwenk:
             table_name, index_name = '/phrases', '/long_indices'
-            nexam = len(f.get_node(index_name))
-            indices = {'train': f.get_node(index_name)[:int(nexam*0.8)],
-                       'valid': f.get_node(index_name)[int(nexam*0.8):int(nexam*0.9)],
-                       'test' : f.get_node(index_name)[int(nexam*0.9):]}[which_set]
-            indices = indices[start:stop]
+            node = f.get_node(index_name)
+            indices = node[start:stop]
             words = f.get_node(table_name)
+            if self._using_cache:
+                assert self._max_data_index <= node.nrows, ("Dataset only has %d row", node.nrows)
             self.samples_sequences = [words[i['pos']:i['pos']+i['length']] for i in indices]
             self.num_examples = len(indices)
+
             f.close()
             return
 
@@ -300,13 +302,16 @@ class H5Shuffle(Dataset):
                 stop = self._cache_delta + start
 
             self._next_cache_index = stop 
+            assert self._loading == False, "Cannot have 2 processes at once"
             self._loading = True
             p = Process(target=self._parallel_load_data, args=(start, stop, self._data_queue))
             p.start()
+            #self._parallel_load_data(start, stop, self._data_queue)
 
         if not self._data_queue.empty():
             self.samples_sequences = self.samples_sequences[self._cache_delta:] + self._data_queue.get()
             self._num_since_last_load = 0
+            assert self._data_queue.empty(), "Cannot have 2 things on queue at once"
             self._loading = False
 
     def get(self, source, indexes):

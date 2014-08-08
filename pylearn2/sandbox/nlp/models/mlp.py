@@ -13,7 +13,7 @@ from pylearn2.utils import wraps
 from pylearn2.sandbox.nlp.linear.matrixmul import MatrixMul
 from theano.compat.python2x import OrderedDict
 from pylearn2.sandbox.rnn.space import SequenceSpace
-
+from theano import scan
 
 class Softmax(mlp.Softmax):
     """
@@ -177,6 +177,7 @@ class PartialBag(Layer):
                              "VectorSpace) as input but received  %s instead"
                              % (space))
         self.input_space = space
+        
         self.output_space = VectorSpace(dim=self.dim*3)
 
     @wraps(Layer.get_params)
@@ -185,23 +186,29 @@ class PartialBag(Layer):
 
     @wraps(Layer.fprop)
     def fprop(self, state_below):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # TODO: if word is 1 char long, don't double count it.
+        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! This code is incorrect"
+        print "It double counts the character of a single character word"
         state_below, mask = state_below
-        # Note that shape of state_below is [1,b,c]
         shape = state_below.shape
-        #range_ = T.arange(shape[1])
-        last_indices = T.cast(mask.sum(axis=0), dtype='int64') -1
-        
-        def fprop_step(one_example, last_index):
-            first_chars = one_example[0]
-            last_chars = one_example[last_index]
-            middle_chars = (one_example.sum(axis=0) - first_chars - last_chars)/(last_index+1)
-            return first_chars, middle_chars, last_chars
+        range_ = T.arange(shape[1])
+        first_chars = state_below[0, range_]
+        last_indices = T.sum(mask, axis=1, dtype='int64') -1
+        last_chars = state_below[last_indices, range_]
+        #last_chars = state_below[range_, last_indices]
+        middle_chars = T.sum(state_below, axis=1) - first_chars - last_chars
+        # out0 = T.alloc(0., (shape[0], shape[2]))
+        # def fprop_step(state_below, last_index, out):
+        #     middle_chars = T.sum(state_below[1:last_index], axis=1)
+        #     print "state_below", state_below.ndim
+        #     print "middle", middle_chars.ndim
+        #     #last_chars = state_below[last_index]
+        #     return middle_chars#, last_chars
 
-        (first_chars, middle_chars, last_chars), updates = scan(fn=fprop_step, 
-            sequences=[state_below.dimshuffle(1,0,2), last_indices],
-            name='fprop_step',
-            outputs_info=None,
-            profile=True) # output_shape = [b,c]
+        # middle_chars, updates = scan(fn=fprop_step, sequences=[state_below, last_indices],
+        #                              outputs_info=[out0]
+        #                          )
 
-        rval = T.concatenate((first_chars, middle_chars, last_chars), axis=1) # Concatenate on channel
+        rval = middle_chars # T.concatenate((first_chars.T, middle_chars.T, last_chars.T), axis=0)
         return rval

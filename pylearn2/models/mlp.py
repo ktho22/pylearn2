@@ -1246,7 +1246,7 @@ class Softmax(Layer):
 
         if self.no_affine:
             return OrderedDict()
-
+     
         W = self.W
 
         assert W.ndim == 2
@@ -1317,13 +1317,15 @@ class Softmax(Layer):
         else:
             W = self.W
 
+        else:
+            W = self.W
+
             assert W.ndim == 2
 
             sq_W = T.sqr(W)
 
             row_norms = T.sqrt(sq_W.sum(axis=1))
             col_norms = T.sqrt(sq_W.sum(axis=0))
-
             rval = OrderedDict([('row_norms_min',  row_norms.min()),
                                 ('row_norms_mean', row_norms.mean()),
                                 ('row_norms_max',  row_norms.max()),
@@ -1488,7 +1490,7 @@ class Softmax(Layer):
         assert z.ndim == 2
 
         z = z - z.max(axis=1).dimshuffle(0, 'x')
-        log_prob = z - T.log(T.exp(z).sum(axis=1).dimshuffle(0, 'x')+1e-8)
+        log_prob = z - T.log(1e-8 + T.exp(z).sum(axis=1).dimshuffle(0, 'x'))
         # we use sum and not mean because this is really one variable per row
         
         if self._has_binary_target:
@@ -2494,10 +2496,7 @@ class Linear(Layer):
             return 1-((Y*Y_hat).sum(axis=1) / 
                       (Y.norm(2, axis=1)*Y_hat.norm(2, axis=1))) + 1e-8
         else:
-            print "Y.ndim", Y.ndim
-            print "Y_hat", Y_hat.ndim
             rval = T.sqr(Y - Y_hat)
-            print "rval", rval.ndim
             return T.sqr(Y - Y_hat)
 
 
