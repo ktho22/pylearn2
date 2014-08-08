@@ -1,0 +1,86 @@
+!obj:pylearn2.train.Train {
+  dataset: !obj:pylearn2.sandbox.nlp.datasets.skipgram.H5Skipgram {
+    path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
+    node: 'none', #('/phrases', '/indices'),
+    which_set: 'train',
+    frame_length: &n 7,
+    stop: 10000000,
+    load_to_memory: True,
+    _iter_num_batches: 3000,
+    X_labels: &l 30000,
+    cache_size: 1000000,
+    cache_delta: 100000,
+    schwenk: True,
+  },
+  model: !obj:pylearn2.models.mlp.MLP {
+    input_space: !obj:pylearn2.space.IndexSpace {
+      dim: 1,
+      max_labels: *l  
+    },
+    target_source: 'targets', #['target0', 'target1', 'target2', 'target3', 'target4', 'target5' ],
+    layers: [
+      !obj:pylearn2.sandbox.nlp.models.mlp.ProjectionLayer {
+        layer_name: 'projection',
+        dim: 300,
+        irange: 0.01
+      },
+      !obj:pylearn2.models.mlp.Linear {
+        layer_name: 'outputEmbedding',
+        dim: *l,
+        irange: 0.01
+      },
+      
+      !obj:pylearn2.sandbox.nlp.models.mlp.Softmax {
+        n_classes: *l,
+        layer_name: 'h5',
+        irange: 0.01,
+        binary_target_dim: 1,
+        no_affine: True,
+      }
+    ],
+  },
+  algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+    batch_size: 256,
+    learning_rate: .01,
+    #learning_rule: !obj:pylearn2.training_algorithms.learning_rule.AdaDelta {},
+    monitoring_dataset: {
+     'valid': !obj:pylearn2.sandbox.nlp.datasets.skipgram.H5Skipgram {
+        path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
+        node: 'none', # ('/phrases', '/indices'),
+        which_set: 'valid',
+        frame_length: *n,
+        start: 10000000,
+        stop: 10010000,
+        _iter_num_batches: 30,
+        X_labels: *l,
+        load_to_memory: True,
+        schwenk: True,
+
+      },
+      'train': !obj:pylearn2.sandbox.nlp.datasets.skipgram.H5Skipgram {
+        path: '/data/lisatmp3/chokyun/mt/vocab.30k/bitexts.selected/binarized_text.en.h5',
+        node: 'none', # ('/phrases', '/indices'),
+        which_set: 'train',
+        frame_length: *n,
+        start: 10000,
+        stop: 20000,
+        _iter_num_batches: 30,
+        X_labels: *l,
+        load_to_memory: True,
+        schwenk: True,
+
+      },
+    },
+  },
+ # extensions: [
+ #      !obj:pylearn2.train_extensions.WordRelationship {
+ #        vocab: "/data/lisatmp3/pougetj/vocab.pkl",
+ #        questions: "/data/lisatmp3/pougetj/questions-words.txt",
+ #        vocab_size: *l,
+ #        UNK: 1,
+ #        n_batches: 4, 
+ #      }
+ # ],
+  save_path: '/Tmp/devincol/schwenkRealSkipgram300_30000V_sharedParams_NoAda.pkl',
+  save_freq: 1,
+}
