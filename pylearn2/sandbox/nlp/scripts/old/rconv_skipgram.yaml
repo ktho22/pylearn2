@@ -114,6 +114,7 @@
          n_batches: 4, 
        }
   ],
+  save_path: '/Tmp/devincol/para_skipgram_test.pkl',
   save_freq: 1,
   save_path: %(save_path)s,
 }

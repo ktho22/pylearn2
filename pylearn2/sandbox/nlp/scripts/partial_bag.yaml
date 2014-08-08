@@ -6,18 +6,18 @@
     input_space: !obj:pylearn2.sandbox.rnn.space.SequenceSpace {
       space: !obj:pylearn2.space.IndexSpace {
         dim: 1,
-        max_labels: &labels 145,
+        max_labels: &labels 144,
       },
     },
     layers: [
       !obj:pylearn2.sandbox.nlp.models.mlp.ProjectionLayer {
         layer_name: 'projection_layer',
-        dim: &n_hids %(n_hids)i,
+        dim: 300,
         irange: 0.01,
       },
       !obj:pylearn2.sandbox.nlp.models.mlp.PartialBag {
         layer_name: 'partial_bag_layer',
-        dim: *n_hids,
+        dim: 300,
       },
       !obj:pylearn2.models.mlp.Linear {
         layer_name: 'linear_layer',
@@ -48,6 +48,6 @@
       cost: !obj:pylearn2.costs.mlp.Default {}
     }
   },
-  save_path: %(save_path)s,
+  save_path: '/Tmp/devincol/translation_bag_cosine',
   save_freq: 1,
 }

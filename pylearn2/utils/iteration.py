@@ -740,6 +740,7 @@ class FiniteDatasetIterator(object):
         else:
             dataset_sub_spaces = dataset_space.components
         assert len(dataset_source) == len(dataset_sub_spaces)
+        
 
         
 
@@ -769,11 +770,8 @@ class FiniteDatasetIterator(object):
             assert len(convert) == len(source)
             self._convert = convert
 
-        for i, (so, sp #, dt
-            ) in enumerate(safe_izip(source,
-                                     sub_spaces,
-                                     #self._raw_data
-                                 )):
+        for i, (so, sp) in enumerate(safe_izip(source, sub_spaces)):
+            
             idx = dataset_source.index(so)
             dspace = dataset_sub_spaces[idx]
 
@@ -794,7 +792,7 @@ class FiniteDatasetIterator(object):
 
                     def fn(batch, dspace=dspace, sp=sp):
                         try:
-                              return dspace.np_format_as(batch, sp)
+                            return dspace.np_format_as(batch, sp)
                         except ValueError as e:
                             msg = str(e) + '\nMake sure that the model and '\
                                            'dataset have been initialized with '\
@@ -839,6 +837,9 @@ class FiniteDatasetIterator(object):
         else:
             rval = self._fallback_next(next_index)
 
+        # rval = tuple(
+        #     fn(data) if fn else data
+        #     for data, fn in safe_izip(raw_data, self._convert))
         if not self._return_tuple and len(rval) == 1:
             rval, = rval
         return rval
@@ -850,6 +851,9 @@ class FiniteDatasetIterator(object):
                       self._convert)
         )
 
+    def _raw_next(self, next_index):
+        return self._dataset.get(self._source, next_index)
+         
     def _fallback_next(self, next_index):
         # TODO: handle fancy-index copies by allocating a buffer and
         # using np.take()
