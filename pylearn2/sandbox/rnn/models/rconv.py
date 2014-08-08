@@ -208,7 +208,6 @@ class RecursiveConvolutionalLayer(Layer):
             if state_below.ndim == 3:
                 def _grab_root(seqlen,one_sample,prev_sample):
                     return one_sample[seqlen]
-
                 roots, updates = scan(_grab_root,
                         sequences = [seqlens, roots.dimshuffle(1,0,2)],
                         outputs_info = [tensor.alloc(0., self.dim)],

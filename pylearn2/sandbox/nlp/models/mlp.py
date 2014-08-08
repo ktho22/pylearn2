@@ -2,7 +2,7 @@
 Sandbox multilayer perceptron layers for natural language processing (NLP)
 """
 import theano.tensor as T
-from theano import config
+from theano import config, scan
 
 from pylearn2.models import mlp
 from pylearn2.models.mlp import Layer
@@ -12,6 +12,7 @@ from pylearn2.utils import sharedX
 from pylearn2.utils import wraps
 from pylearn2.sandbox.nlp.linear.matrixmul import MatrixMul
 from theano.compat.python2x import OrderedDict
+from pylearn2.sandbox.rnn.space import SequenceSpace
 
 
 class Softmax(mlp.Softmax):
@@ -145,3 +146,62 @@ class ProjectionLayer(Layer):
         assert W.name is not None
         params = [W]
         return params
+
+class PartialBag(Layer):
+    """
+    A recurrent neural network layer using the hyperbolic tangent
+    activation function, passing on all hidden states or a selection
+    of them to the next layer.
+
+    The hidden state is initialized to zeros.
+
+    Parameters
+    ----------
+    dim : int
+        The number of elements in the hidden layer
+    layer_name : str
+        The name of the layer. All layers in an MLP must have a unique name.
+    """
+    def __init__(self, dim, layer_name):
+        self.dim = 3*dim
+        self.__dict__.update(locals())
+        self.rnn_friendly = True
+        del self.self
+        super(PartialBag, self).__init__()
+
+    @wraps(Layer.set_input_space)
+    def set_input_space(self, space):
+        if (not isinstance(space, SequenceSpace) or
+                not isinstance(space.space, VectorSpace)):
+            raise ValueError("Recurrent layer needs a SequenceSpace("
+                             "VectorSpace) as input but received  %s instead"
+                             % (space))
+        self.input_space = space
+        self.output_space = VectorSpace(dim=self.dim*3)
+
+    @wraps(Layer.get_params)
+    def get_params(self):
+        return []
+
+    @wraps(Layer.fprop)
+    def fprop(self, state_below):
+        state_below, mask = state_below
+        # Note that shape of state_below is [1,b,c]
+        shape = state_below.shape
+        #range_ = T.arange(shape[1])
+        last_indices = T.cast(mask.sum(axis=0), dtype='int64') -1
+        
+        def fprop_step(one_example, last_index):
+            first_chars = one_example[0]
+            last_chars = one_example[last_index]
+            middle_chars = (one_example.sum(axis=0) - first_chars - last_chars)/(last_index+1)
+            return first_chars, middle_chars, last_chars
+
+        (first_chars, middle_chars, last_chars), updates = scan(fn=fprop_step, 
+            sequences=[state_below.dimshuffle(1,0,2), last_indices],
+            name='fprop_step',
+            outputs_info=None,
+            profile=True) # output_shape = [b,c]
+
+        rval = T.concatenate((first_chars, middle_chars, last_chars), axis=1) # Concatenate on channel
+        return rval

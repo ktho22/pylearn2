@@ -6,8 +6,8 @@ dirname=os.path.abspath(os.path.dirname(__file__))
 
 def get_hparams(fname,train):
    
-    n_hids = '512'
-    stop = 'None'
+    n_hids = '620'
+    stop = '10000'
     
     save_path = os.path.join('result/%s_'%time.strftime("%m%d"))
     #if not os.path.exists(save_path):
@@ -31,6 +31,11 @@ def get_hparams(fname,train):
             'stop': eval(stop),
             'save_path': save_path}
     elif 'Substitute' in fname:
+        hparams = {
+            'n_hids': eval(n_hids),
+            'stop': eval(stop),
+            'save_path': save_path}
+    elif 'partial_bag' in fname:
         hparams = {
             'n_hids': eval(n_hids),
             'stop': eval(stop),
