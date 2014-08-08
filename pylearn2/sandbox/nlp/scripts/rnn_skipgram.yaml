@@ -31,7 +31,8 @@
      #   irange: 0.01
      #  },
      #!obj:pylearn2.sandbox.rnn.models.rnn.Recurrent {
-     !obj:pylearn2.sandbox.rnn.models.rnn.FactoredMultiplicativeRUGatedRecurrent {
+     #!obj:pylearn2.sandbox.rnn.models.rnn.FactoredMultiplicativeRUGatedRecurrent {
+     !obj:pylearn2.sandbox.rnn.models.rconv.RecursiveConvolutionalLayer {
         layer_name: 'recurrent_layer',
         proj_dim:  256,
         dim: 300,
