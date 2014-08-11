@@ -6,11 +6,11 @@ savepath= '/data/lisatmp3/devincol/embeddings/'
 
 def gen(savename):
     with open(savename) as f:
+       ipdb.set_trace()
        model = cPickle.load(f)
        # The first layer is your projection layer, the embeddings are in the weight
        # matrix, which is returned by get_params(). This will give you a shared Theano
        # variable, which you can convert to a NumPy array using get_value()
-       ipdb.set_trace()
        x = model.layers[0].get_params()[0].get_value() 
        savename = os.path.splitext(os.path.basename(savename))[0]
        save_at =os.path.join(savepath,savename) 

@@ -12,7 +12,7 @@
     layers: [
       !obj:pylearn2.sandbox.nlp.models.mlp.ProjectionLayer {
         layer_name: 'projection_layer',
-        dim: &n_hids %(n_hids)i,
+        dim: &n_hids 620, #%(n_hids)i,
         irange: 0.01,
       },
       !obj:pylearn2.sandbox.nlp.models.mlp.PartialBag {
@@ -60,7 +60,7 @@
   },
   extensions: [
       !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
-          save_path: %(save_path)s,
+          save_path: 'result/test.pkl', #%(save_path)s,
           channel_name: 'valid_objective'
       }
   ]
