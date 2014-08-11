@@ -23,7 +23,6 @@ from pylearn2.utils import serial
 from pylearn2.utils import safe_zip
 from pylearn2.utils.iteration import FiniteDatasetIterator
 from multiprocessing import Process, Queue
-import ipdb
 
 def index_from_one_hot(one_hot):
     return numpy.where(one_hot == 1.0)[0][0]
@@ -83,12 +82,6 @@ class H5Shuffle(Dataset):
         self.which_set = which_set
         self.frame_length = frame_length
         self.X_labels = X_labels
-       
-        if type(stop)==str:
-            self._stop = eval(stop)
-        else:
-            self._stop = stop
-        self._start = start
 	if _iter_num_batches is None:
 		self._iter_num_batches = 1000
 	else:
@@ -107,6 +100,8 @@ class H5Shuffle(Dataset):
             self._using_cache = True
             self._cache_size = cache_size
             self._cache_delta = cache_delta
+            self._max_data_index = stop
+            self._start = start
             self._data_queue = Queue()
             self._num_since_last_load = 0
             self._next_cache_index = cache_delta + cache_size + start
@@ -118,6 +113,8 @@ class H5Shuffle(Dataset):
         else:
             self.rng = numpy.random.RandomState(rng)
 
+        print which_set
+        print "Start is", start, "stop is", stop
 
         if self._using_cache:
             self._load_data(which_set, (start, start+cache_size))
@@ -173,6 +170,7 @@ class H5Shuffle(Dataset):
             swaps = numpy.random.randint(0, self.frame_length - 1, len(X))
             y = numpy.zeros((len(X), self.frame_length - 1))
             y[numpy.arange(len(X)), swaps] = 1
+            # print "Performing permutations...",
             for sample, swap in enumerate(swaps):
                 X[sample, swap], X[sample, swap + 1] = \
                                                   X[sample, swap + 1], X[sample, swap]
@@ -185,13 +183,15 @@ class H5Shuffle(Dataset):
             if numpy.array_equal(indexes, self.lastY[1]):
                 return self.lastY[0]
             else:
+                print "You can only ask for targets immediately after asking for those features"
                 return None
 
         self.sourceFNs = {'features': getFeatures, 'targets': getTarget}
 
     def _parallel_load_data(self, start, stop, queue):
-        start = self._start
-        stop = self._stop
+        #print "Starting to load data"
+        #with tables.open_file(self.base_path) as f:
+        #self.node = f.get_node(self.node_name)
         with tables.open_file(self.base_path) as f:
             if self.schwenk:
                 table_name, index_name = '/phrases', '/long_indices'
@@ -202,13 +202,11 @@ class H5Shuffle(Dataset):
                 new_data = [words[i['pos']:i['pos']+i['length']] for i in indices]
             else:
                 node = f.get_node(self.node_name)
-                nexam = len(node)
-                new_data = {'train': node[:int(nexam*0.8)],
-                            'valid': node[int(nexam*0.8):int(nexam*0.9)],
-                            'test' : node[int(nexam*0.9):]}[which_set]
+                new_data = node[start:stop]
         queue.put(new_data)
+        #print "Finished loading data"
 
-    def _load_data(self, which_set, startstop=None):
+    def _load_data(self, which_set, startstop):
         """
         Load the WMT14 data from disk.
 
@@ -217,13 +215,17 @@ class H5Shuffle(Dataset):
         which_set : str
             Subset of the dataset to use (either "train", "valid" or "test")
         """
-        assert which_set in ['train', 'valid', 'test']   
-        
-        # Load Data
-        stop = self._stop
-        start = self._start
+        # TODO: Make files work with this terminology
 
-        f = tables.open_file(self.base_path)
+        # Check which_set
+        #if which_set not in ['train', 'valid', 'test']:
+        #    raise ValueError(which_set + " is not a recognized value. " +
+        #                     "Valid values are ['train', 'valid', 'test'].")
+            
+        # Load Data
+        print startstop
+        (start, stop) = startstop
+	f = tables.open_file(self.base_path)
 
 
         if self.schwenk:
@@ -240,12 +242,14 @@ class H5Shuffle(Dataset):
             return
 
         self.node = f.get_node(self.node_name)
-
+        # with tables.open_file(self.base_path) as f:
+        #     print "Loading n-grams..."
+        #     node = f.get_node(self.node_name)
         if self._load_to_memory:
-            nexam = len(self.node)
-            self.samples_sequences = {'train': self.node[:int(nexam*0.8)],
-                            'valid': self.node[int(nexam*0.8):int(nexam*0.9)],
-                            'test' : self.node[int(nexam*0.9):]}[which_set]
+            if stop is not None:
+                self.samples_sequences = self.node[start:stop]
+            else:
+                self.samples_sequences = self.node[start:]
             self.num_examples = len(self.samples_sequences)
             f.close()
         else:
@@ -253,7 +257,8 @@ class H5Shuffle(Dataset):
                 self.num_examples = self.node.nrows
             else:   
                 self.num_examples = stop - start 
-        return self.samples_sequences
+        print "Got", self.num_examples, "sentences"
+        #self.samples_sequences = numpy.asarray(self.samples_sequences)
  
     def _validate_source(self, source):
         """
@@ -289,12 +294,14 @@ class H5Shuffle(Dataset):
         return self.data_specs
     
     def _maybe_load_data(self):
+       # print "In maybe load data"
         if self._num_since_last_load >= self._cache_delta and not self._loading:
+            #print "need to load data"
 
             # If we would go over the end of the dataset by loading more data,
             # we start over from the beginning of the dataset.
             if (self._next_cache_index + self._cache_delta > 
-                self._stop):
+                self._max_data_index):
                 start = self._start
                 stop = self._cache_delta + start
             else:
@@ -309,10 +316,13 @@ class H5Shuffle(Dataset):
             #self._parallel_load_data(start, stop, self._data_queue)
 
         if not self._data_queue.empty():
+            #print "queue has stuff"
             self.samples_sequences = self.samples_sequences[self._cache_delta:] + self._data_queue.get()
+            #print "Queue is empty", self._data_queue.empty()
             self._num_since_last_load = 0
             assert self._data_queue.empty(), "Cannot have 2 things on queue at once"
             self._loading = False
+            #print "got stuff from queue"
 
     def get(self, source, indexes):
         """
@@ -322,6 +332,7 @@ class H5Shuffle(Dataset):
         """
         if self._using_cache:
             self._num_since_last_load += len(indexes)
+            #print "new batch", self._num_examples_seen
             self._maybe_load_data()
 
         if type(indexes) is slice:
@@ -363,6 +374,7 @@ class H5Shuffle(Dataset):
             convert.append(None)
  
         # TODO: Refactor
+        print "In shuffle init!"
         if mode is None:
             if hasattr(self, '_iter_subset_class'):
                 mode = self._iter_subset_class
