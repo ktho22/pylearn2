@@ -22,7 +22,7 @@ from pylearn2.datasets.dataset import Dataset
 from pylearn2.sandbox.nlp.datasets.shuffle2 import H5Shuffle
 from pylearn2.space import CompositeSpace, VectorSpace, IndexSpace, Conv2DSpace
 from pylearn2.utils import serial
-from pylearn2.utils import safe_zip
+from pylearn2.utils import safe_zip, safe_izip
 from pylearn2.utils.iteration import FiniteDatasetIterator
 from pylearn2.sandbox.rnn.space import SequenceDataSpace
 from pylearn2.utils.iteration import resolve_iterator_class
@@ -39,10 +39,11 @@ class H5RnnSkipgram(H5Shuffle):
     _default_seed = (17, 2, 946)
 
     def __init__(self, path, node, which_set, frame_length,
-                 start=0, stop=None, X_labels=None,
-		 _iter_num_batches=None, rng=_default_seed, 
+                 word_dict, char_dict,
+                 start=0, stop=None, word_labels=None, char_labels=None,
+         _iter_num_batches=None, rng=_default_seed, 
                  load_to_memory=False, cache_size=None,
-                 cache_delta=None):
+                 cache_delta=None, schwenk=False, use_words=False):
         """
         Parameters
         ----------
@@ -64,29 +65,31 @@ class H5RnnSkipgram(H5Shuffle):
             design matrix when choosing minibatches.
         """
         super(H5RnnSkipgram, self).__init__(path, node, which_set, frame_length,
-                 start=start, stop=stop, X_labels=X_labels,
-		 _iter_num_batches=_iter_num_batches, rng=rng, 
+                 start=start, stop=stop, X_labels=word_labels,
+         _iter_num_batches=_iter_num_batches, rng=rng, 
                  load_to_memory=load_to_memory, cache_size=cache_size,
-                 cache_delta=cache_delta)
+                 cache_delta=cache_delta, schwenk=schwenk)
 
+        self._word_dict_path = word_dict
+        self._char_dict_path = char_dict
+        self._use_words = use_words
         self._load_dicts()
-        features_space = SequenceDataSpace(IndexSpace(dim=1, max_labels=213))
+        self.word_labels = word_labels
+        features_space = SequenceDataSpace(IndexSpace(dim=1, max_labels=char_labels))
         features_source = 'features'
+        
+        targets_space = IndexSpace(dim=1, max_labels=30000)
+        targets_source = 'targets'
 
-        targets_space = [
-            IndexSpace(dim=1, max_labels=self.X_labels), 
-            IndexSpace(dim=1, max_labels=self.X_labels),
-            IndexSpace(dim=1, max_labels=self.X_labels),
-            IndexSpace(dim=1, max_labels=self.X_labels),
-            IndexSpace(dim=1, max_labels=self.X_labels),
-            IndexSpace(dim=1, max_labels=self.X_labels)]
-        targets_source = tuple('target'+str(i) for i in range(len(targets_space)))
+        if self._use_words:
+            word_space = IndexSpace(dim=1, max_labels=self.word_labels)
+            word_source = 'words'
+            spaces = [CompositeSpace((features_space, word_space)), targets_space]
+        else:
+            spaces = [features_space,  targets_space]
 
-        spaces = [features_space] + targets_space
-        #print "Space len", len(spaces)
+        source = (features_source, targets_source)
         space = CompositeSpace(spaces)
-        source = (features_source,)+ targets_source
-        #print "source len", len(source)
         self.data_specs = (space, source)
 
         def getFeatures(indexes):
@@ -99,20 +102,18 @@ class H5RnnSkipgram(H5Shuffle):
             else:
                 sequences = [self.node[i] for i in indexes]
             # Get random start point for ngram
-            wis = [numpy.random.randint(0, len(s)-self.frame_length+1, 1)[0] for s in sequences]
-
-            ngrams = numpy.asarray([s[wi:self.frame_length+wi] for s, wi in zip(sequences, wis)])
-
-            middle = int(frame_length/2)
-            preX = ngrams[:,middle]
+            # Get random source word index for "ngram"
+            source_i = [numpy.random.randint(self.frame_length/2 +1, len(s)-self.frame_length/2, 1)[0] 
+                        for s in sequences]
+            target_i = [min(abs(int(numpy.random.normal(s_i, self.frame_length/3.0))), len(s)-1)
+                        for s_i, s in safe_izip(source_i, sequences)]
+            preX = [s[i] for i, s in safe_izip(source_i, sequences)]
             X = []
-            
-            
             def make_sequence(word):
                 string = self._inv_words[word]
                 #if len(string) < 1:
                     #print "Word index", word, "Returns empty word"
-                seq = map(lambda c: [self._char_labels[c]], self._inv_words[word])
+                seq = map(lambda c: [self._char_labels.get(c, 0)], self._inv_words[word])
                 #if len(seq) < 1:
                    # print "Word index", word, "Returns empty sequence", string
                 seq.append([self._eow])
@@ -120,49 +121,53 @@ class H5RnnSkipgram(H5Shuffle):
 
             for word in preX:
                 X.append(make_sequence(word))
-               # #####
-               # min_len = 100
-               # if len(X)<min_len:
-               #     min_len=len(seq)
-               # ####
             X = numpy.asarray(X)
-            y = numpy.concatenate((ngrams[:,range(middle)], ngrams[:,range(middle+1,self.frame_length)]), axis=1)
+            y = [numpy.asarray([s[i]]) for i, s in safe_izip(target_i, sequences)]
+            #y[y>=30000] = numpy.asarray([1])
+            y = numpy.asarray(y)
+            bad_is = numpy.where(y >= 30000)
+            y[bad_is] =  numpy.asarray([1])
             
             # Target Words mapped to integers greater than input max are set to 
             # 1 (unknown)
-            y[y>=self.X_labels] = 1
 
             # Store the targets generated by these indices.
             self.lastY = (y, indexes)
+            if self._use_words:
+                self.lastPreX = preX
             return X
 
-        def getTarget(source_index, indexes):
+        def getWords(indexes):
+            return self.lastPreX
+
+        def getTarget(indexes):
             if numpy.array_equal(indexes, self.lastY[1]):
-                y = numpy.transpose(self.lastY[0][:,source_index][numpy.newaxis])
+                #y = numpy.transpose(self.lastY[0][:,source_index][numpy.newaxis])
                 #print y
                 #print y[-1]
-                return y
+                return self.lastY[0]
             else:
                 print "You can only ask for targets immediately after asking for those features"
                 return None
                
-        targetFNs = [
-            lambda indexes: getTarget(0, indexes), lambda indexes: getTarget(1, indexes),
-            lambda indexes: getTarget(2, indexes),lambda indexes: getTarget(3, indexes),
-            lambda indexes: getTarget(4, indexes), 
-            lambda indexes: getTarget(5, indexes)]
+        # targetFNs = [
+        #     lambda indexes: getTarget(0, indexes), lambda indexes: getTarget(1, indexes),
+        #     lambda indexes: getTarget(2, indexes),lambda indexes: getTarget(3, indexes),
+        #     lambda indexes: getTarget(4, indexes), 
+        #     lambda indexes: getTarget(5, indexes)]
         # targetFNs = [(lambda indexes: getTarget(i, indexes)) for i in range(len(targets_space))]
-        self.sourceFNs = {'target'+str(i): targetFNs[i] for i in range(len(targets_space))}
-        #print "sourceFNs", self.sourceFNs
+        #self.sourceFNs = {'targets'+str(i): targetFNs[i] for i in range(len(targets_space))}
         self.sourceFNs['features'] =  getFeatures
-        
+        self.sourceFNs['targets'] = getTarget
+        self.sourceFNs['words'] = getWords
+      
     def _load_dicts(self):
-        word_dict_path = "/data/lisatmp3/pougetj/vocab.pkl"
-        char_dict_path = "/data/lisatmp3/pougetj/char_vocab.pkl"
-        with open(word_dict_path) as f:
+        # word_dict_path = "/data/lisatmp3/pougetj/vocab.pkl"
+        # char_dict_path = "/data/lisatmp3/pougetj/char_vocab.pkl"
+        with open(self._word_dict_path) as f:
             word_labels = cPickle.load(f)
         self._inv_words = {v:k for k, v in word_labels.items()}
-        with open(char_dict_path) as f:
+        with open(self._char_dict_path) as f:
             self._char_labels = cPickle.load(f)
         self._eow = len(self._char_labels)
 
@@ -177,6 +182,8 @@ class H5RnnSkipgram(H5Shuffle):
     @functools.wraps(Dataset.iterator)
     def iterator(self, batch_size=None, num_batches=None, rng=None,
                  data_specs=None, return_tuple=False, mode=None):
+        if self._iter_num_batches is not None:
+            num_batches = self._iter_num_batches 
         subset_iterator = self._create_subset_iterator(
             mode=mode, batch_size=batch_size, num_batches=num_batches, rng=rng
         )
