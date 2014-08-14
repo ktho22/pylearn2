@@ -194,8 +194,8 @@ class PartialBag(Layer):
         def fprop_step(one_example, last_index):
             first_chars = one_example[0]
             last_chars = one_example[last_index]
-            #middle_chars = (one_example.sum(axis=0) - first_chars - last_chars)
-            middle_chars = (one_example.sum(axis=0) - first_chars - last_chars)/T.cast((last_index+1), 'float32')
+            middle_chars = (one_example.sum(axis=0) - first_chars - last_chars)
+            #middle_chars = (one_example.sum(axis=0) - first_chars - last_chars)/T.cast((last_index+1), 'float32')
             return first_chars, middle_chars, last_chars
 
         (first_chars, middle_chars, last_chars), updates = scan(fn=fprop_step, 
