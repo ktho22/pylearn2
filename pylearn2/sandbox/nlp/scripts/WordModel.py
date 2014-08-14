@@ -45,7 +45,6 @@ class CharModel():
       return words_
          
    def run_example(self, example):
-      ipdb.set_trace()
       if self.append_eow== 'all':
          example.append(144)
       elif self.append_eow == 'single':

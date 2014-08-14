@@ -24,8 +24,8 @@ inv_dict = {v:k for k,v in char_dict.items()}
 inv_dict[0] = inv_dict[len(inv_dict.keys())-1]
 unknown =  inv_dict[0]
 
-#fprop = pylearn2_model.layers[0].fprop;append_eow=None
-fprop = pylearn2_model.fprop;append_eow = 'single'
+fprop = pylearn2_model.layers[0].fprop;append_eow=None
+#fprop = pylearn2_model.fprop;append_eow = 'single'
 #fprop = lambda state_below: pylearn2_model.layers[1].fprop(pylearn2_model.layers[0].fprop(state_below));append_eow='all'
 
 model = CharModel(pylearn2_model, char_dict, fprop=fprop, append_eow = append_eow)
