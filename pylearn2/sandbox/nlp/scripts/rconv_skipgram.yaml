@@ -31,7 +31,7 @@
         irange: 0.01
        },
      !obj:pylearn2.sandbox.rnn.models.rconv.RecursiveConvolutionalLayer {
-        layer_name: 'recurrent_layer',
+        layer_name: 'rconv_layer',
         dim: *n_hids,
         irange: 0.01,
         indices: [-1]
@@ -93,17 +93,13 @@
     }
 
   },
-  #extensions: [
-  #     !obj:pylearn2.train_extensions.WordRelationship {
-  #       vocab: "/data/lisatmp3/pougetj/vocab.pkl",
-  #       questions: "/data/lisatmp3/pougetj/questions-words.txt",
-  #       vocab_size: *w,
-  #       UNK: 1,
-  #       n_batches: 4, 
-  #       use_chars: True,
-  #       char_dict_path: '/data/lisa/data/word2vec/char_vocab.pkl',
-  #     }
-  #],
+
+  extensions: [
+      !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+          save_path: %(best_save_path)s,
+          channel_name: 'valid_objective'
+      }
+  ],
   save_path: %(save_path)s,
   save_freq: 1,
 }

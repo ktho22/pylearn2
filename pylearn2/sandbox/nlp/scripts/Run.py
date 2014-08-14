@@ -13,35 +13,14 @@ def get_hparams(fname,train):
     #if not os.path.exists(save_path):
     #    os.makedirs(save_path)
     save_path += fname +'_'+ n_hids 
+    best_save_path = save_path+'_best' 
         #+'_'+ stop
 
-    if '.RecursiveConvolutionalLayer' in train:
-        hparams = {
-            'n_hids': eval(n_hids),
-            'stop': eval(stop),
-            'save_path': save_path}
-    elif '.H5RnnSkipgram' in train:
-        hparams = {
-            'n_hids': eval(n_hids),
-            'stop': eval(stop),
-            'save_path': save_path}
-    elif 'Shuffle' in fname:
-        hparams = {
-            'n_hids': eval(n_hids),
-            'stop': eval(stop),
-            'save_path': save_path}
-    elif 'Substitute' in fname:
-        hparams = {
-            'n_hids': eval(n_hids),
-            'stop': eval(stop),
-            'save_path': save_path}
-    elif 'partial_bag' in fname:
-        hparams = {
-            'n_hids': eval(n_hids),
-            'stop': eval(stop),
-            'save_path': save_path}
-    else:
-        raise ValueError()
+    hparams = {
+        'n_hids': eval(n_hids),
+        'stop': eval(stop),
+        'save_path': save_path,
+        'best_save_path': best_save_path}
     return hparams
 
 for arg in sys.argv:
@@ -53,6 +32,7 @@ for arg in sys.argv:
     hparams = get_hparams(fname,train)
     savename=hparams['save_path']+'.yaml'
     hparams['save_path']+='.pkl'
+    hparams['best_save_path']+='.pkl'
     
     train = train % (hparams)
     print train
