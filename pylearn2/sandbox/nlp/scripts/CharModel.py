@@ -3,7 +3,7 @@ import theano as t
 from scipy.spatial.distance import cosine
 
 class CharModel():
-   def __init__(self, model, char_dict, embeddings=None, fprop=None, words=None, append_eow=False):
+   def __init__(self, model, char_dict, embeddings=None, fprop=None, words=None, append_eow=None):
       self.append_eow = append_eow
       space = model.get_input_space()
       data, mask = space.make_theano_batch(batch_size=1)
@@ -45,8 +45,10 @@ class CharModel():
       return words_
          
    def run_example(self, example):
-      if self.append_eow:
+      if self.append_eow== 'all':
          example.append(144)
+      elif self.append_eow == 'single':
+         example.append(144) if len(example) == 1 else example
       data = np.asarray([np.asarray([np.asarray([char])]) for char in example])
       mask = np.ones((data.shape[0], data.shape[1]), dtype='float32')    
       wordvec = self.fprop(data, mask)[0]
